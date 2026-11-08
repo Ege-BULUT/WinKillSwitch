@@ -1,0 +1,15 @@
+{
+  "format": "winkillswitch-rules",
+  "version": 1,
+  "name": "Quiet laptop",
+  "description": "Caps browsers and chat apps so the fans stay quiet and the battery lasts. Pages still load; heavy tabs take longer.",
+  "limits": [
+    { "name": "chrome.exe", "cpu": 50, "mem_mb": null },
+    { "name": "msedge.exe", "cpu": 50, "mem_mb": null },
+    { "name": "firefox.exe", "cpu": 50, "mem_mb": null },
+    { "name": "Discord.exe", "cpu": 25, "mem_mb": 1024 },
+    { "name": "Slack.exe", "cpu": 25, "mem_mb": 1024 }
+  ],
+  "watch": [],
+  "risky_folders": null
+}

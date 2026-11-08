@@ -70,6 +70,21 @@ fn open(pid: Pid) -> Option<HANDLE> {
     (!h.is_null()).then_some(h)
 }
 
+/// The opened process really is `name` (process ids get reused) and is not part of Windows.
+fn is_expected(h: HANDLE, name: &str) -> bool {
+    use windows_sys::Win32::System::Threading::QueryFullProcessImageNameW;
+    let mut buf = [0u16; 1024];
+    let mut len = buf.len() as u32;
+    // SAFETY: a valid handle with PROCESS_QUERY_LIMITED_INFORMATION and a sized buffer.
+    if unsafe { QueryFullProcessImageNameW(h, 0, buf.as_mut_ptr(), &mut len) } == 0 {
+        return false;
+    }
+    let path = String::from_utf16_lossy(&buf[..len as usize]).to_lowercase();
+    let windir = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()).to_lowercase();
+    let file = path.rsplit('\\').next().unwrap_or("");
+    file == name.to_lowercase() && !path.starts_with(&(windir + "\\"))
+}
+
 fn set_working_set(h: HANDLE, mem_mb: Option<u64>) -> bool {
     // SAFETY: a valid process handle opened with PROCESS_SET_QUOTA.
     unsafe {
@@ -102,6 +117,8 @@ pub struct Enforcer {
     /// pid -> (limit name, memory setting applied). Failures are recorded too, so they are not
     /// retried every tick.
     applied: HashMap<Pid, (String, Option<u64>)>,
+    /// Processes skipped for good: not what their name says, part of Windows, or access denied.
+    refused: std::collections::HashSet<Pid>,
 }
 
 impl Enforcer {
@@ -114,6 +131,7 @@ impl Enforcer {
         // Lift limits that were removed or changed away from a process.
         let alive: std::collections::HashSet<Pid> = snap.procs.iter().map(|p| p.pid).collect();
         self.applied.retain(|pid, _| alive.contains(pid));
+        self.refused.retain(|pid| alive.contains(pid));
         let stale: Vec<Pid> = self
             .applied
             .iter()
@@ -140,7 +158,7 @@ impl Enforcer {
         for p in &snap.procs {
             let key = p.name.to_lowercase();
             let Some(limit) = by_name.get(&key) else { continue };
-            if p.kind == ProcKind::Windows || p.pid == std::process::id() {
+            if p.kind == ProcKind::Windows || p.pid == std::process::id() || self.refused.contains(&p.pid) {
                 continue;
             }
             let job = self.jobs.entry(key.clone()).or_insert_with(|| {
@@ -162,10 +180,16 @@ impl Enforcer {
             let prev = self.applied.get(&p.pid).map(|(_, m)| *m);
             let first = prev.is_none();
             let Some(h) = open(p.pid) else {
-                self.applied.insert(p.pid, (key.clone(), limit.mem_mb));
+                self.refused.insert(p.pid);
                 errors.push(format!("{} (PID {}): access denied, try running as administrator", p.name, p.pid));
                 continue;
             };
+            if !is_expected(h, &p.name) {
+                // SAFETY: opened above.
+                unsafe { CloseHandle(h) };
+                self.refused.insert(p.pid);
+                continue;
+            }
             let mut ok = true;
             if first {
                 // SAFETY: both handles are valid; a process can be in several (nested) jobs.
@@ -239,11 +263,21 @@ mod tests {
         }
     }
 
+    /// PowerShell copied out of the Windows folder, which the enforcer rightly refuses to touch.
+    fn outside_powershell(tag: &str) -> std::path::PathBuf {
+        let src = std::path::PathBuf::from(std::env::var("SystemRoot").unwrap()).join("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe");
+        let dst = std::env::temp_dir().join(format!("wks-{tag}-{}.exe", std::process::id()));
+        std::fs::copy(src, &dst).unwrap();
+        dst
+    }
+
     /// A busy child uses a whole core; capped at 2% of the machine it uses about that.
     #[test]
     #[ignore = "burns a core for a few seconds"]
     fn cpu_cap_slows_a_busy_child() {
-        let mut child = std::process::Command::new("powershell").args(["-NoProfile", "-Command", "while($true){}"]).spawn().unwrap();
+        let exe = outside_powershell("burn");
+        let name = exe.file_name().unwrap().to_string_lossy().into_owned();
+        let mut child = std::process::Command::new(&exe).args(["-NoProfile", "-Command", "while($true){}"]).spawn().unwrap();
         let pid = child.id();
         std::thread::sleep(std::time::Duration::from_millis(1500));
         let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1) as f64;
@@ -253,14 +287,16 @@ mod tests {
             (cpu_time(pid) - a) / 3.0 / cores * 100.0
         };
         let before = measure();
-        let snap = Snapshot { procs: vec![proc_info(pid, "powershell.exe")], ..Default::default() };
+        let snap = Snapshot { procs: vec![proc_info(pid, &name)], ..Default::default() };
         let mut e = Enforcer::default();
-        let limits = vec![Limit { name: "powershell.exe".into(), cpu: Some(2), mem_mb: None }];
+        let limits = vec![Limit { name: name.clone(), cpu: Some(2), mem_mb: None }];
         assert!(e.sync(&limits, &snap).is_empty());
         let capped = measure();
         e.sync(&[], &snap);
         let after = measure();
         let _ = child.kill();
+        let _ = child.wait();
+        let _ = std::fs::remove_file(&exe);
         eprintln!("machine share: before {before:.1}%, capped {capped:.1}%, lifted {after:.1}%");
         assert!(capped <= 3.0, "capped at {capped}");
         assert!(after > capped * 1.5, "lifted: {after}");
@@ -284,13 +320,15 @@ mod tests {
     #[ignore = "allocates 400 MB for a few seconds"]
     fn memory_ceiling_holds_a_child_down() {
         let script = "$a = New-Object byte[] 400MB; while($true){ for($i=0;$i -lt $a.Length;$i+=4096){ $a[$i]=1 } }";
-        let mut child = std::process::Command::new("powershell").args(["-NoProfile", "-Command", script]).spawn().unwrap();
+        let exe = outside_powershell("mem");
+        let name = exe.file_name().unwrap().to_string_lossy().into_owned();
+        let mut child = std::process::Command::new(&exe).args(["-NoProfile", "-Command", script]).spawn().unwrap();
         let pid = child.id();
         std::thread::sleep(std::time::Duration::from_secs(4));
         let before = working_set(pid) >> 20;
-        let snap = Snapshot { procs: vec![proc_info(pid, "powershell.exe")], ..Default::default() };
+        let snap = Snapshot { procs: vec![proc_info(pid, &name)], ..Default::default() };
         let mut e = Enforcer::default();
-        assert!(e.sync(&[Limit { name: "powershell.exe".into(), cpu: None, mem_mb: Some(128) }], &snap).is_empty());
+        assert!(e.sync(&[Limit { name: name.clone(), cpu: None, mem_mb: Some(128) }], &snap).is_empty());
         std::thread::sleep(std::time::Duration::from_secs(3));
         let capped = working_set(pid) >> 20;
         let alive = child.try_wait().unwrap().is_none();
@@ -298,42 +336,56 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_secs(3));
         let lifted = working_set(pid) >> 20;
         let _ = child.kill();
+        let _ = child.wait();
+        let _ = std::fs::remove_file(&exe);
         eprintln!("working set: before {before} MB, capped {capped} MB, lifted {lifted} MB, alive {alive}");
         assert!(before > 300 && capped <= 136 && alive && lifted > 300);
     }
 
-    /// Caps a child process we start ourselves, then lifts the cap.
+    /// A Windows program is refused even when a rule names it, so a reused or made-up process id
+    /// can never cap part of Windows.
     #[test]
-    fn limits_a_child_and_lifts_it() {
+    fn refuses_windows_programs() {
         let mut child = std::process::Command::new("cmd").args(["/c", "ping -n 30 127.0.0.1 >nul"]).spawn().unwrap();
-        let pid = child.id();
-        let proc = ProcInfo {
-            pid,
-            parent: None,
-            name: "cmd.exe".into(),
-            exe: None,
-            cpu: 0.0,
-            mem: 0,
-            start: 0,
-            disk: 0,
-            net: 0,
-            gpu: 0.0,
-            gpu_engine: String::new(),
-            status: "Running",
-            kind: ProcKind::Background,
-            cmd: String::new(),
-            session: None,
-            publisher: String::new(),
-            description: String::new(),
-        };
-        let snap = Snapshot { procs: vec![proc], ..Default::default() };
+        let mut p = proc_info(child.id(), "cmd.exe");
+        p.kind = ProcKind::App; // even if it were misclassified
+        let snap = Snapshot { procs: vec![p], ..Default::default() };
         let mut e = Enforcer::default();
-        let limits = vec![Limit { name: "CMD.EXE".into(), cpu: Some(10), mem_mb: Some(64) }];
-        assert!(e.sync(&limits, &snap).is_empty());
-        assert_eq!(e.count("cmd.exe"), 1);
-        assert!(e.sync(&limits, &snap).is_empty(), "idempotent");
-        assert!(e.sync(&[], &snap).is_empty());
+        assert!(e.sync(&[Limit { name: "cmd.exe".into(), cpu: Some(10), mem_mb: Some(64) }], &snap).is_empty());
         assert_eq!(e.count("cmd.exe"), 0);
         let _ = child.kill();
+    }
+
+    /// A process id whose real program differs from the snapshot's name is left alone.
+    #[test]
+    fn refuses_a_mismatched_pid() {
+        let exe = outside_powershell("pid");
+        let mut child = std::process::Command::new(&exe).args(["-NoProfile", "-Command", "Start-Sleep 20"]).spawn().unwrap();
+        let snap = Snapshot { procs: vec![proc_info(child.id(), "Spotify.exe")], ..Default::default() };
+        let mut e = Enforcer::default();
+        e.sync(&[Limit { name: "Spotify.exe".into(), cpu: Some(10), mem_mb: None }], &snap);
+        assert_eq!(e.count("Spotify.exe"), 0);
+        let _ = child.kill();
+        let _ = child.wait();
+        let _ = std::fs::remove_file(&exe);
+    }
+
+    /// Caps a child we start ourselves (from outside the Windows folder), then lifts it.
+    #[test]
+    fn limits_a_child_and_lifts_it() {
+        let exe = outside_powershell("lift");
+        let name = exe.file_name().unwrap().to_string_lossy().into_owned();
+        let mut child = std::process::Command::new(&exe).args(["-NoProfile", "-Command", "Start-Sleep 20"]).spawn().unwrap();
+        let snap = Snapshot { procs: vec![proc_info(child.id(), &name)], ..Default::default() };
+        let mut e = Enforcer::default();
+        let limits = vec![Limit { name: name.to_uppercase(), cpu: Some(10), mem_mb: Some(64) }];
+        assert!(e.sync(&limits, &snap).is_empty());
+        assert_eq!(e.count(&name), 1);
+        assert!(e.sync(&limits, &snap).is_empty(), "idempotent");
+        assert!(e.sync(&[], &snap).is_empty());
+        assert_eq!(e.count(&name), 0);
+        let _ = child.kill();
+        let _ = child.wait();
+        let _ = std::fs::remove_file(&exe);
     }
 }

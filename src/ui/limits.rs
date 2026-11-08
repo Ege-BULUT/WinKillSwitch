@@ -28,8 +28,7 @@ pub fn set(s: &mut App, limit: Limit) {
         s.limits.push(limit);
     }
     s.persist();
-    let errors = s.enforcer.sync(&s.limits, &s.snap);
-    report(s, errors);
+    s.enforce_limits();
 }
 
 pub fn report(s: &mut App, errors: Vec<String>) {
@@ -134,7 +133,7 @@ pub fn settings_list(s: &App, l: &Look) -> El {
     }
     for (i, lim) in s.limits.iter().enumerate() {
         let name = lim.name.clone();
-        let n = s.enforcer.count(&lim.name);
+        let n = s.snap.procs.iter().filter(|p| p.name.eq_ignore_ascii_case(&lim.name)).count();
         list = list.child(
             row()
                 .key(format!("limit-row-{i}"))

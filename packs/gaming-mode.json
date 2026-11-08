@@ -1,0 +1,16 @@
+{
+  "format": "winkillswitch-rules",
+  "version": 1,
+  "name": "Gaming mode",
+  "description": "Keeps sync, chat and music apps from stealing processor time and memory from your game. They keep running, just slower.",
+  "limits": [
+    { "name": "OneDrive.exe", "cpu": 10, "mem_mb": null },
+    { "name": "Dropbox.exe", "cpu": 10, "mem_mb": null },
+    { "name": "GoogleDriveFS.exe", "cpu": 10, "mem_mb": null },
+    { "name": "ms-teams.exe", "cpu": 10, "mem_mb": 1024 },
+    { "name": "Slack.exe", "cpu": 10, "mem_mb": 1024 },
+    { "name": "Spotify.exe", "cpu": 10, "mem_mb": 512 }
+  ],
+  "watch": [],
+  "risky_folders": null
+}

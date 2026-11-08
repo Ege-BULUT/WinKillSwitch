@@ -1,0 +1,14 @@
+{
+  "format": "winkillswitch-rules",
+  "version": 1,
+  "name": "Bloat blocker",
+  "description": "Tells you when updaters and anything from Downloads or Temp start, and keeps background updaters to a sliver of your processor.",
+  "limits": [
+    { "name": "AdobeARM.exe", "cpu": 10, "mem_mb": 512 },
+    { "name": "GoogleUpdate.exe", "cpu": 10, "mem_mb": 512 },
+    { "name": "updater.exe", "cpu": 10, "mem_mb": 512 },
+    { "name": "OfficeClickToRun.exe", "cpu": 25, "mem_mb": null }
+  ],
+  "watch": ["*updater*", "*update.exe", "adobearm*"],
+  "risky_folders": true
+}

@@ -11,6 +11,7 @@ pub mod info;
 pub mod limits;
 pub mod locks;
 pub mod overlays;
+pub mod packs;
 pub mod palette;
 pub mod palettes;
 pub mod pauseswitch;

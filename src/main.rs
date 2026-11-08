@@ -44,8 +44,7 @@ fn handle(s: &mut App, m: Msg) {
                 s.toast_about(pid, format!("{name} started"), why);
             }
             if !s.limits.is_empty() {
-                let errors = s.enforcer.sync(&s.limits, &s.snap);
-                ui::limits::report(s, errors);
+                s.enforce_limits();
             }
             if let Some(pid) = s.pending_info.take() {
                 s.open_info(pid);

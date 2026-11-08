@@ -13,6 +13,7 @@ pub mod kill;
 pub mod limits;
 pub mod locks;
 pub mod net;
+pub mod packs;
 pub mod memory;
 pub mod procs;
 pub mod related;

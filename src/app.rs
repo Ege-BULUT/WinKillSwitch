@@ -263,6 +263,16 @@ impl App {
         }
     }
 
+    /// Apply the saved limits to running processes. Never in demo mode: the demo's process ids
+    /// are made up and could belong to real processes.
+    pub fn enforce_limits(&mut self) {
+        if self.demo {
+            return;
+        }
+        let errors = self.enforcer.sync(&self.limits, &self.snap);
+        crate::ui::limits::report(self, errors);
+    }
+
     /// A toast about one process, with a Show button.
     pub fn toast_about(&mut self, pid: Pid, title: impl Into<String>, detail: String) {
         self.toast(title, Some(detail), false);
