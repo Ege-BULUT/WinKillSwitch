@@ -104,6 +104,10 @@ pub struct App {
     pub ram: RamState,
     pub disk: DiskState,
     pub info: Option<InfoState>,
+    /// Visible table columns by id; empty means the default set.
+    pub columns: Vec<String>,
+    /// Where the column picker opened, while it is open.
+    pub column_menu: Option<rune::PointerPress>,
     /// Open the info sheet for this pid once it shows up in a sample (headless scenes).
     pub pending_info: Option<Pid>,
 
@@ -152,6 +156,8 @@ impl App {
             cache_shown: if mem.total > 0 { mem.cache as f32 / mem.total as f32 } else { 0.0 },
             ram: RamState::default(),
             info: None,
+            columns: saved.columns.clone(),
+            column_menu: None,
             pending_info: None,
             disk: DiskState { phase: DiskPhase::Idle, items: Vec::new(), drive: sys::cleanup::system_drive(), results: Vec::new() },
             appearance: saved.appearance.clone(),
@@ -180,7 +186,7 @@ impl App {
         if self.demo {
             return; // never write the made-up demo machine over the user's saved state
         }
-        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: Vec::new(), appearance: self.appearance.clone() };
+        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: self.columns.clone(), appearance: self.appearance.clone() };
         if let Err(e) = store::save(&saved) {
             eprintln!("winkillswitch: could not save state: {e}");
         }
@@ -231,6 +237,22 @@ impl App {
         self.send(Cmd::Refresh);
     }
 
+    pub fn column_shown(&self, id: &str) -> bool {
+        id == "name" || if self.columns.is_empty() { crate::ui::columns::DEFAULT.contains(&id) } else { self.columns.iter().any(|c| c == id) }
+    }
+
+    pub fn toggle_column(&mut self, id: &str) {
+        if self.columns.is_empty() {
+            self.columns = crate::ui::columns::DEFAULT.iter().map(|c| c.to_string()).collect();
+        }
+        if self.columns.iter().any(|c| c == id) {
+            self.columns.retain(|c| c != id);
+        } else {
+            self.columns.push(id.to_string());
+        }
+        self.persist();
+    }
+
     /// Open the "about this process" sheet and start inspecting it.
     pub fn open_info(&mut self, pid: Pid) {
         let Some(p) = self.snap.get(pid) else { return };
@@ -275,15 +297,7 @@ impl App {
             })
             .collect();
         let (col, dir) = self.table.sort().unwrap_or(("cpu", rune_kit::SortDir::Descending));
-        rows.sort_by(|a, b| {
-            let o = match col {
-                "name" => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                "pid" => a.pid.cmp(&b.pid),
-                "mem" => a.mem.cmp(&b.mem),
-                _ => a.cpu.partial_cmp(&b.cpu).unwrap_or(std::cmp::Ordering::Equal),
-            };
-            dir.apply(o)
-        });
+        rows.sort_by(|a, b| dir.apply(crate::ui::columns::cmp(a, b, col)));
         rows.into_iter().map(|p| p.pid).collect()
     }
 

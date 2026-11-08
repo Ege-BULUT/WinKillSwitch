@@ -15,8 +15,9 @@ pub fn view(s: &App, cx: &mut Cx<App>) -> El {
 
     let backdrop = rune::effect(gfx::MESH).effect_data(gfx::data(l.dark, 0, 0.0)).absolute(0.0, 0.0).w_full().h_full();
 
+    let mut layer: Vec<El> = Vec::new();
     let main = match s.tab {
-        Tab::Processes => processes::view(s, cx, &l),
+        Tab::Processes => processes::view(s, cx, &l, &mut layer),
         Tab::Clean => clean::view(s, cx, &l),
         Tab::PauseSwitch => pauseswitch::view(s, cx, &l),
         Tab::Settings => settings::view(s, cx, &l),
@@ -43,7 +44,6 @@ pub fn view(s: &App, cx: &mut Cx<App>) -> El {
 
     let base = el().key("root").w_full().h_full().fill(theme::color(l.v.bg)).child(backdrop).child(body).child(tabs);
 
-    let mut layer: Vec<El> = Vec::new();
     let window_h = cx.layout_size("root").map(|z| z[1]).unwrap_or(800.0);
     crate::ui::info::sheet(s, &l, &mut layer, window_h);
     overlays::confirm(s, &l.kit, &mut layer);

@@ -1,5 +1,6 @@
 //! The Rune view, split by screen area.
 pub mod clean;
+pub mod columns;
 pub mod fmt;
 pub mod gfx;
 pub mod glass;

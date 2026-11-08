@@ -1,0 +1,4 @@
+{"events": [
+  {"t": 0.5, "type": "secondary-click", "x": 640, "y": 97},
+  {"t": 2.0, "type": "mark", "name": "end"}
+]}

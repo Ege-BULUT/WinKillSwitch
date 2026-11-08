@@ -44,6 +44,8 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Live process table refreshed every 1.5 seconds: name, PID, CPU and memory, plus machine wide CPU and memory use.
 - Search by name, PID or executable path.
 - Sortable, resizable, virtualised table with multi selection and keyboard navigation.
+- Right click the header to choose columns: type, status, publisher, description, PID, command line, CPU, memory, disk, **GPU** and **GPU engine**. Your choice is saved.
+- Per process GPU use from the same GPU Engine counters Task Manager reads, with the busiest engine (3D, video decode, copy and so on).
 
 **Memory cleaner**
 - A ring gauge of memory in use, cached and free, with a two minute history.
@@ -120,6 +122,14 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
     <td align="center"><sub>Kanagawa Wave, frosted glass</sub></td>
   </tr>
   <tr>
+    <td><img src="docs/assets/columns-dark.png" alt="Extra columns including GPU"></td>
+    <td><img src="docs/assets/pal-catppuccin-dark.png" alt="Catppuccin Mocha"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Extra columns, including GPU and GPU engine</sub></td>
+    <td align="center"><sub>Catppuccin Mocha</sub></td>
+  </tr>
+  <tr>
     <td><img src="docs/assets/pal-tokyo-dark.png" alt="Tokyo Night"></td>
     <td><img src="docs/assets/pal-everforest-light.png" alt="Everforest Light"></td>
   </tr>
@@ -180,7 +190,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed (v0.2)
 - [x] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step (v0.3)
 - [x] "What is this process?" card that also explains why access is denied (v0.3.1)
-- [ ] Column picker on header right click, including per process GPU usage
+- [x] Column picker on header right click, including per process GPU usage (v0.3.2)
 - [ ] Find a process by pointing at its window
 - [ ] Global hotkey and quick palette
 - [ ] Process tree view

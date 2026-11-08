@@ -59,7 +59,9 @@ pub fn apply(s: &mut App) {
                 cpu: *cpu,
                 mem: mb * 1024 * 1024,
                 start: 0,
-                disk: 0,
+                disk: [12_400_000u64, 3_100_000, 820_000, 410_000][i % 4] / (1 + i as u64 / 4),
+                gpu: [9.8f32, 4.1, 0.6, 2.3, 1.2, 6.5, 0.0, 0.4, 3.3][i % 9] / (1.0 + i as f32 / 9.0),
+                gpu_engine: ["3D", "3D", "Video Decode", "3D", "Copy", "3D", "", "3D", "Video Decode"][i % 9].to_string(),
                 status: "Running",
                 kind,
                 cmd: String::new(),
@@ -170,6 +172,9 @@ pub fn apply(s: &mut App) {
             s.disk.phase = DiskPhase::Done { freed, deleted: 48_210, skipped: 41, at: -100.0 };
         }
         _ => {}
+    }
+    if let Ok(cols) = std::env::var("WKS_COLUMNS") {
+        s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();
     }
     if std::env::var("WKS_INFO").is_ok() {
         use crate::sys::info::{Account, Detail, Signature, Verdict};

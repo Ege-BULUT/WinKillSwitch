@@ -5,6 +5,7 @@ use std::time::Instant;
 use sysinfo::{DiskUsage, ProcessRefreshKind, ProcessStatus, ProcessesToUpdate, System, UpdateKind};
 
 use crate::model::{ProcInfo, ProcKind, Snapshot};
+use crate::sys::gpu::GpuSampler;
 use crate::sys::verinfo::VerCache;
 
 pub struct Sampler {
@@ -13,6 +14,7 @@ pub struct Sampler {
     ver: VerCache,
     last: Option<Instant>,
     windir: String,
+    gpu: Option<GpuSampler>,
 }
 
 impl Sampler {
@@ -21,7 +23,7 @@ impl Sampler {
         sys.refresh_cpu_usage();
         let cores = sys.cpus().len().max(1) as f32;
         let windir = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()).to_lowercase();
-        Sampler { sys, cores, ver: VerCache::default(), last: None, windir }
+        Sampler { sys, cores, ver: VerCache::default(), last: None, windir, gpu: GpuSampler::new() }
     }
 
     /// Refresh and return the current process list (dead processes removed).
@@ -36,6 +38,7 @@ impl Sampler {
         self.sys.refresh_cpu_usage();
         self.sys.refresh_memory();
 
+        let gpu = self.gpu.as_mut().map(|g| g.sample()).unwrap_or_default();
         let elapsed = self.last.replace(Instant::now()).map(|t| t.elapsed().as_secs_f64()).unwrap_or(1.0).max(0.1);
 
         let procs = self
@@ -52,6 +55,7 @@ impl Sampler {
                 let disk = (((read_bytes + written_bytes) as f64) / elapsed) as u64;
                 let ver = exe.as_deref().map(|e| self.ver.get(e)).unwrap_or_default();
                 let description = if ver.description.is_empty() { name.clone() } else { ver.description };
+                let (gpu_pct, gpu_engine) = gpu.get(&p.pid().as_u32()).cloned().unwrap_or_default();
                 let cmd = p.cmd().iter().map(|a| a.to_string_lossy()).collect::<Vec<_>>().join(" ");
                 ProcInfo {
                     pid: p.pid().as_u32(),
@@ -62,6 +66,8 @@ impl Sampler {
                     mem: p.memory(),
                     start: p.start_time(),
                     disk,
+                    gpu: gpu_pct,
+                    gpu_engine,
                     status: status_label(p.status()),
                     kind,
                     cmd,

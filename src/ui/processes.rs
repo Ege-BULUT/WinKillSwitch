@@ -2,30 +2,35 @@
 
 use std::borrow::Cow;
 
-use rune::{Align, Cx, El, col, el, row, text};
-use rune_kit::{Button, ButtonVariant, Cell, ControlSize, Table, TableColumn, TextInput};
+use rune::{Cx, El, col, el, row, text};
+use rune_kit::{Button, ButtonVariant, Cell, ControlSize, MenuItem, Table, TableColumn, TextInput, context_menu};
 
 use crate::app::App;
 use crate::ui::theme::Look;
-use crate::ui::{fmt, icons};
+use crate::ui::{columns, fmt, icons};
 
-pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
+pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
     let k = &l.kit;
     let ok = k.c.success.icon;
     let (ink, muted) = (l.text, l.muted);
     let ui = k.ty.ui;
 
-    let table = Table::new(
+    let mut table = Table::new(
         |s: &App| &s.table,
         |s: &mut App| &mut s.table,
         |s: &App| s.view_rows.len(),
         |s: &App, i| Cow::Owned(s.view_rows.get(i).copied().unwrap_or(0).to_string()),
     )
-    .name("Processes")
-    .column(TableColumn::new("name", "Name").flex(2.0).min(180.0).sortable())
-    .column(TableColumn::new("pid", "PID").width(72.0).min(56.0).align(Align::End).sortable())
-    .column(TableColumn::new("cpu", "CPU").width(76.0).min(56.0).align(Align::End).sortable())
-    .column(TableColumn::new("mem", "Memory").width(96.0).min(72.0).align(Align::End).sortable())
+    .name("Processes");
+    for c in columns::ALL.iter().filter(|c| s.column_shown(c.id)) {
+        let mut tc = TableColumn::new(c.id, c.title).min(c.min).align(columns::align(c)).sortable();
+        tc = match c.width {
+            Some(w) => tc.width(w),
+            None => tc.flex(2.0),
+        };
+        table = table.column(tc);
+    }
+    let table = table
     .cell(move |s: &App, i, col| {
         let Some(&pid) = s.view_rows.get(i) else { return Cell::text("") };
         let Some(p) = s.snap.get(pid) else { return Cell::text("") };
@@ -38,8 +43,9 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
                     .child(text(p.name.clone()).font(ui).color(ink)),
             ),
             "pid" => Cell::text(p.pid.to_string()).mono().color(muted),
-            "cpu" => Cell::text(fmt::pct(p.cpu)).mono(),
-            _ => Cell::text(fmt::bytes(p.mem)).mono(),
+            "cpu" | "mem" | "disk" | "gpu" => Cell::text(columns::text(p, col)).mono(),
+            "type" | "status" | "engine" => Cell::text(columns::text(p, col)).color(muted),
+            _ => Cell::text(columns::text(p, col)),
         }
     })
     .on_sort(|s: &mut App, col, dir, _| {
@@ -102,7 +108,7 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
         .padding(16.0)
         .gap(12.0)
         .child(top)
-        .child(col().key("table-frame").w_full().grow(1.0).min_h(0.0).radius(12.0).clip_rounded(12.0).child(table))
+        .child(header_menu(s, l, layer, col().key("table-frame").w_full().grow(1.0).min_h(0.0).radius(12.0).clip_rounded(12.0).child(table)))
         .child(action_bar(s, l))
 }
 
@@ -172,4 +178,33 @@ fn action_bar(s: &App, l: &Look) -> El {
         .gaps(8.0, 8.0)
         .child(row().gap(8.0).center_y().grow(1.0).min_w(0.0).child(add).child(hint.truncate().min_w(0.0)))
         .child(row().gap(8.0).child(details).child(kill_rel).child(kill))
+}
+
+/// Right click on the table header opens the column picker.
+fn header_menu(s: &App, l: &Look, layer: &mut Vec<El>, frame: El) -> El {
+    let header_h = l.table_style().header_height;
+    let trigger = frame.on_secondary_press_local(move |s: &mut App, e: rune::PointerEvent, _| {
+        if e.y <= header_h + 2.0 {
+            s.column_menu = Some(e.window());
+        }
+    });
+    let mut menu = context_menu("columns", trigger, s.column_menu).group_label("Columns").min_width(200.0);
+    for c in columns::ALL.iter().filter(|c| c.id != "name") {
+        let id = c.id;
+        menu = menu.item(MenuItem::new(c.title).checked(s.column_shown(id)).on_select(move |s: &mut App| {
+            s.toggle_column(id);
+        }));
+    }
+    menu.separator()
+        .item(MenuItem::new("Reset to default").on_select(|s: &mut App| {
+            s.columns.clear();
+            s.column_menu = None;
+            s.persist();
+        }))
+        .on_close(|s: &mut App| s.column_menu = None)
+        .build(&l.kit, layer)
+        // The menu wraps its trigger; the wrapper has to grow like the table frame it holds.
+        .w_full()
+        .grow(1.0)
+        .min_h(0.0)
 }
