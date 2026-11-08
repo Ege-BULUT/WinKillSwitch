@@ -36,7 +36,7 @@ WinKillSwitch is a desktop process manager for Windows. It shows what is running
 The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyco/rune). Panels are real glass over a live gradient, every change animates on springs, and the whole look follows the palette you pick.
 
 > [!NOTE]
-> WinKillSwitch is in **alpha**. The interface, process monitoring, groups, theming and the memory cleaner work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
+> WinKillSwitch is in **alpha**. The interface, process monitoring, groups, theming and the memory and disk cleaners work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
 
 ## Features
 
@@ -49,6 +49,12 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - A ring gauge of memory in use, cached and free, with a two minute history.
 - One **Clean memory** button: trims every app's working set and, as administrator, clears the standby cache. Nothing is closed.
 - Shows exactly what it freed, as a number that counts up and as the cached slice of the ring shrinking.
+
+**Disk cleaner**
+- One **Analyze** button finds temporary files, browser caches, crash dumps, thumbnail and shader caches, Windows Update leftovers and the Recycle Bin, with a live count while it looks.
+- Review the list: safe categories start ticked; the Recycle Bin and anything that makes the next launch slower start unticked; a browser's cache is skipped while it runs.
+- **Clean** shows what it freed, file counts and anything skipped because it was in use.
+- Never follows links or junctions, never deletes the folders themselves, and keeps temporary files changed in the last week.
 
 **Groups**
 - Create, rename in place and delete groups of processes, keyed by executable path.
@@ -77,12 +83,12 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
     <td align="center"><sub>Same view in light mode</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/assets/clean-dark.png" alt="Memory cleaner"></td>
-    <td><img src="docs/assets/pause-dark.png" alt="PauseSwitch"></td>
+    <td><img src="docs/assets/clean-dark.png" alt="Memory and disk cleaner"></td>
+    <td><img src="docs/assets/clean-light.png" alt="Disk cleaner after a clean, Catppuccin Latte"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Memory cleaner after a clean</sub></td>
-    <td align="center"><sub>PauseSwitch</sub></td>
+    <td align="center"><sub>Memory freed, disk analyzed and ready to clean</sub></td>
+    <td align="center"><sub>After a disk clean, Catppuccin Latte</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/settings-dark.png" alt="Appearance settings"></td>
@@ -159,7 +165,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 
 - [x] Responsive under load: sampling and cleaning run off the UI thread, and the UI runs at above normal priority
 - [x] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed (v0.2)
-- [ ] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step
+- [x] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step (v0.3)
 - [ ] "What is this process?" card that also explains why access is denied
 - [ ] Column picker on header right click, including per process GPU usage
 - [ ] Find a process by pointing at its window

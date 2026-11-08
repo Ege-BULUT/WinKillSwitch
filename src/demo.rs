@@ -136,5 +136,31 @@ pub fn apply(s: &mut App) {
     s.mem_hist = (0..60).map(|i| if i < 44 { 0.595 + 0.006 * ((i as f32) * 0.7).sin() } else { 0.575 + 0.002 * ((i as f32) * 0.9).sin() }).collect();
     s.ram.last = Some(RamReport { before, after, trimmed: 214, skipped: 9, purged_cache: true });
     s.ram.shown_at = -100.0;
+
+    // The disk cleaner: WKS_DISK=ready shows a reviewed list, WKS_DISK=done a finished clean.
+    use crate::app::{DiskItem, DiskPhase};
+    use crate::sys::cleanup::{Cleaned, Found};
+    let mb = 1024 * 1024u64;
+    let sizes = [("temp", 4_812 * mb, true), ("chrome", 1_903 * mb, true), ("edge", 344 * mb, true), ("wintemp", 391 * mb, true),
+        ("thumbs", 212 * mb, true), ("crash", 486 * mb, true), ("shaders", 702 * mb, false), ("bin", 2_640 * mb, false)];
+    let cats = crate::sys::cleanup::categories();
+    s.disk.items = sizes
+        .iter()
+        .filter_map(|(id, bytes, on)| {
+            let cat = cats.iter().find(|c| c.id == *id)?.clone();
+            Some(DiskItem { cat, found: Found { bytes: *bytes, files: bytes / (180 * 1024), blocked: None }, selected: *on })
+        })
+        .collect();
+    s.disk.drive = (212 * gb, 952 * gb);
+    match std::env::var("WKS_DISK").as_deref() {
+        Ok("ready") => s.disk.phase = DiskPhase::Ready,
+        Ok("done") => {
+            s.disk.results = s.disk.items.iter().filter(|i| i.selected).map(|i| (i.cat.id.to_string(), Cleaned { freed: i.found.bytes * 97 / 100, deleted: i.found.files, skipped: 41 })).collect();
+            let freed = s.disk.results.iter().map(|(_, r)| r.freed).sum();
+            s.disk.drive = (212 * gb + freed, 952 * gb);
+            s.disk.phase = DiskPhase::Done { freed, deleted: 48_210, skipped: 41, at: -100.0 };
+        }
+        _ => {}
+    }
     s.rebuild_rows();
 }

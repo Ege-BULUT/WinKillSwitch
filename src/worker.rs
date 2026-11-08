@@ -24,7 +24,7 @@ pub enum Msg {
     Sample(Snapshot, MemStatus),
     RamStage(&'static str),
     Ram(RamReport),
-    DiskScanning { done: usize, total: usize, current: String },
+    DiskScanning { done: usize, total: usize, current: String, files: u64, bytes: u64 },
     DiskFound(Vec<(Category, Found)>),
     DiskCleaning { done: usize, total: usize, current: String, freed: u64 },
     DiskCleaned { results: Vec<(String, Cleaned)>, drive: (u64, u64) },
@@ -94,9 +94,15 @@ fn run(cmds: Receiver<Cmd>, out: Sender<Msg>) {
                     let cats = cleanup::categories();
                     let total = cats.len();
                     let mut found = Vec::with_capacity(total);
+                    let (mut files, mut bytes) = (0u64, 0u64);
                     for (i, c) in cats.into_iter().enumerate() {
-                        let _ = out.send(Msg::DiskScanning { done: i, total, current: c.name.clone() });
-                        let f = cleanup::scan(&c, &running, elevated);
+                        let _ = out.send(Msg::DiskScanning { done: i, total, current: c.name.clone(), files, bytes });
+                        let name = c.name.clone();
+                        let f = cleanup::scan_with(&c, &running, elevated, &mut |f, b| {
+                            let _ = out.send(Msg::DiskScanning { done: i, total, current: name.clone(), files: files + f, bytes: bytes + b });
+                        });
+                        files += f.files;
+                        bytes += f.bytes;
                         found.push((c, f));
                     }
                     let _ = out.send(Msg::DiskFound(found));
@@ -111,7 +117,10 @@ fn run(cmds: Receiver<Cmd>, out: Sender<Msg>) {
                     let mut freed = 0;
                     for (i, c) in cats.iter().enumerate() {
                         let _ = out.send(Msg::DiskCleaning { done: i, total, current: c.name.clone(), freed });
-                        let r = cleanup::clean(c, &running, elevated);
+                        let name = c.name.clone();
+                        let r = cleanup::clean_with(c, &running, elevated, &mut |f| {
+                            let _ = out.send(Msg::DiskCleaning { done: i, total, current: name.clone(), freed: freed + f });
+                        });
                         freed += r.freed;
                         results.push((c.id.to_string(), r));
                     }

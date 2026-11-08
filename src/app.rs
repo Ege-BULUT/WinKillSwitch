@@ -33,7 +33,7 @@ pub struct RamState {
 
 pub enum DiskPhase {
     Idle,
-    Scanning { done: usize, total: usize, current: String },
+    Scanning { done: usize, total: usize, current: String, files: u64, bytes: u64 },
     Ready,
     Cleaning { done: usize, total: usize, current: String, freed: u64 },
     Done { freed: u64, deleted: u64, skipped: u64, at: f64 },

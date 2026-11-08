@@ -50,7 +50,7 @@ fn handle(s: &mut App, m: Msg) {
             s.ram.last = Some(report);
             s.ram.shown_at = s.clock;
         }
-        Msg::DiskScanning { done, total, current } => s.disk.phase = DiskPhase::Scanning { done, total, current },
+        Msg::DiskScanning { done, total, current, files, bytes } => s.disk.phase = DiskPhase::Scanning { done, total, current, files, bytes },
         Msg::DiskFound(found) => {
             s.disk.items = found
                 .into_iter()

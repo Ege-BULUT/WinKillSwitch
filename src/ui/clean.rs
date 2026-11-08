@@ -210,7 +210,7 @@ fn storage(s: &App, l: &Look) -> El {
     let elevated = s.elevated;
     let analyze = move |s: &mut App| {
         let running = s.running_names();
-        s.disk.phase = DiskPhase::Scanning { done: 0, total: 1, current: "your drive".into() };
+        s.disk.phase = DiskPhase::Scanning { done: 0, total: 1, current: "your drive".into(), files: 0, bytes: 0 };
         s.send(Cmd::ScanDisk { running, elevated });
     };
 
@@ -229,7 +229,7 @@ fn storage(s: &App, l: &Look) -> El {
                 )
                 .child(big_button(l, "disk-analyze", "Analyze".into(), false, true, analyze));
         }
-        DiskPhase::Scanning { done, total, current } => {
+        DiskPhase::Scanning { done, total, current, files, bytes } => {
             body = body.child(
                 col()
                     .w_full()
@@ -238,6 +238,7 @@ fn storage(s: &App, l: &Look) -> El {
                     .items_center()
                     .child(Spinner::new().size(34.0).color(l.accent).build(k))
                     .child(text(format!("Looking at {current}…")).font(k.ty.ui).color(l.text))
+                    .child(text(format!("{} files · {} found", fmt::count(*files), fmt::bytes(*bytes))).font(k.ty.mono).color(l.muted))
                     .child(row().w_full().max_w(320.0).child(Progress::new(Some(*done as f32 / (*total).max(1) as f32)).build(k).w_full())),
             );
         }

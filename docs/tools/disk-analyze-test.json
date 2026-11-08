@@ -1,0 +1,4 @@
+{"events": [
+  {"t": 0.6, "type": "tap", "key": "disk-analyze", "hold": 0.08},
+  {"t": 300.0, "type": "mark", "name": "end"}
+]}

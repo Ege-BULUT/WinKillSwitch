@@ -5,8 +5,9 @@
 //! - Only files under the fixed folders listed in `categories` are touched, never the folders
 //!   themselves, and roots come from Windows' own environment variables.
 //! - Symbolic links and junctions are never followed or deleted through.
-//! - Temporary folders skip anything changed in the last 24 hours, so running installers and
-//!   apps keep their files. Files in use simply fail to delete and are counted as skipped.
+//! - Temporary folders skip anything changed in the last 7 days (the same rule as Windows Disk
+//!   Cleanup), so installers and apps that keep working files there are not disturbed. Files in
+//!   use simply fail to delete and are counted as skipped.
 //! - A browser's cache is skipped while that browser runs.
 //! - The Recycle Bin and anything that makes the next launch slower start unselected.
 
@@ -18,6 +19,9 @@ use windows_sys::Win32::UI::Shell::{SHEmptyRecycleBinW, SHQueryRecycleBinW, SHQU
 
 const REPARSE_POINT: u32 = 0x400;
 const DAY: Duration = Duration::from_secs(24 * 3600);
+const WEEK: Duration = Duration::from_secs(7 * 24 * 3600);
+/// How often scans and cleans report progress, in files.
+const TICK_EVERY: u64 = 1500;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Icon {
@@ -97,11 +101,11 @@ pub fn categories() -> Vec<Category> {
         Category {
             id: "temp",
             name: "Temporary files".into(),
-            detail: "Files apps left in your temp folder. Anything changed in the last day is kept.",
+            detail: "Files apps left in your temp folder. Anything changed in the last week is kept.",
             icon: Icon::Temp,
             roots: existing(env("TEMP").into_iter().collect()),
             prefixes: &[],
-            min_age: Some(DAY),
+            min_age: Some(WEEK),
             needs_admin: false,
             default_on: true,
             blockers: &[],
@@ -114,7 +118,7 @@ pub fn categories() -> Vec<Category> {
             icon: Icon::Windows,
             roots: existing(vec![windir.join("Temp")]),
             prefixes: &[],
-            min_age: Some(DAY),
+            min_age: Some(WEEK),
             needs_admin: true,
             default_on: true,
             blockers: &[],
@@ -260,7 +264,9 @@ fn recycle_bin_size() -> (u64, u64) {
 fn walk(root: &Path, cat: &Category, now: SystemTime, f: &mut dyn FnMut(&Path, u64)) {
     let Ok(rd) = std::fs::read_dir(root) else { return };
     for e in rd.flatten() {
-        let Ok(md) = std::fs::symlink_metadata(e.path()) else { continue };
+        // On Windows a DirEntry's metadata comes from the directory listing itself: no extra
+        // system call, and it describes a link rather than following it.
+        let Ok(md) = e.metadata() else { continue };
         if md.file_type().is_symlink() || md.file_attributes() & REPARSE_POINT != 0 {
             continue;
         }
@@ -307,6 +313,11 @@ fn blocked(cat: &Category, running: &[String], elevated: bool) -> Option<String>
 }
 
 pub fn scan(cat: &Category, running: &[String], elevated: bool) -> Found {
+    scan_with(cat, running, elevated, &mut |_, _| {})
+}
+
+/// `scan`, calling `tick(files, bytes)` every so often while it walks.
+pub fn scan_with(cat: &Category, running: &[String], elevated: bool, tick: &mut dyn FnMut(u64, u64)) -> Found {
     if cat.recycle_bin {
         let (bytes, files) = recycle_bin_size();
         return Found { bytes, files, blocked: None };
@@ -317,12 +328,20 @@ pub fn scan(cat: &Category, running: &[String], elevated: bool) -> Found {
         walk(r, cat, now, &mut |_, len| {
             bytes += len;
             files += 1;
+            if files % TICK_EVERY == 0 {
+                tick(files, bytes);
+            }
         });
     }
     Found { bytes, files, blocked: blocked(cat, running, elevated) }
 }
 
 pub fn clean(cat: &Category, running: &[String], elevated: bool) -> Cleaned {
+    clean_with(cat, running, elevated, &mut |_| {})
+}
+
+/// `clean`, calling `tick(freed)` every so often while it deletes.
+pub fn clean_with(cat: &Category, running: &[String], elevated: bool, tick: &mut dyn FnMut(u64)) -> Cleaned {
     if blocked(cat, running, elevated).is_some() {
         return Cleaned::default();
     }
@@ -336,12 +355,17 @@ pub fn clean(cat: &Category, running: &[String], elevated: bool) -> Cleaned {
     let now = SystemTime::now();
     let mut out = Cleaned::default();
     for r in &cat.roots {
-        walk(r, cat, now, &mut |path, len| match std::fs::remove_file(path) {
-            Ok(()) => {
-                out.freed += len;
-                out.deleted += 1;
+        walk(r, cat, now, &mut |path, len| {
+            match std::fs::remove_file(path) {
+                Ok(()) => {
+                    out.freed += len;
+                    out.deleted += 1;
+                }
+                Err(_) => out.skipped += 1,
             }
-            Err(_) => out.skipped += 1,
+            if (out.deleted + out.skipped) % TICK_EVERY == 0 {
+                tick(out.freed);
+            }
         });
         if cat.prefixes.is_empty() {
             prune(r);
@@ -359,4 +383,138 @@ pub fn system_drive() -> (u64, u64) {
         windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW(wide(&root).as_ptr(), std::ptr::null_mut(), &mut total, &mut free);
     }
     (free, total)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{self, File};
+    use std::time::{Duration, SystemTime};
+
+    fn sandbox(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("wks-cleanup-test-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    fn file(path: &Path, bytes: usize, age: Duration) {
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, vec![7u8; bytes]).unwrap();
+        File::options().write(true).open(path).unwrap().set_modified(SystemTime::now() - age).unwrap();
+    }
+
+    fn cat(roots: Vec<PathBuf>, min_age: Option<Duration>, prefixes: &'static [&'static str]) -> Category {
+        Category {
+            id: "test",
+            name: "Test".into(),
+            detail: "",
+            icon: Icon::Temp,
+            roots,
+            prefixes,
+            min_age,
+            needs_admin: false,
+            default_on: true,
+            blockers: &["blocker.exe"],
+            recycle_bin: false,
+        }
+    }
+
+    #[test]
+    fn keeps_recent_files_and_the_root() {
+        let root = sandbox("age");
+        file(&root.join("old.tmp"), 100, 3 * DAY);
+        file(&root.join(r"sub\deeper\old2.tmp"), 50, 3 * DAY);
+        file(&root.join("fresh.tmp"), 30, Duration::from_secs(60));
+        let c = cat(vec![root.clone()], Some(DAY), &[]);
+
+        let found = scan(&c, &[], false);
+        assert_eq!((found.files, found.bytes), (2, 150), "only the two old files count");
+
+        let done = clean(&c, &[], false);
+        assert_eq!((done.deleted, done.freed, done.skipped), (2, 150, 0));
+        assert!(root.join("fresh.tmp").exists(), "a file changed in the last day is kept");
+        assert!(!root.join("sub").exists(), "emptied folders are pruned");
+        assert!(root.exists(), "the root folder itself is never removed");
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn never_follows_a_junction_out_of_the_root() {
+        let root = sandbox("junction-root");
+        let outside = sandbox("junction-outside");
+        file(&outside.join("precious.txt"), 10, 10 * DAY);
+        file(&root.join("junk.tmp"), 10, 10 * DAY);
+        let link = root.join("link");
+        let ok = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J", &link.to_string_lossy(), &outside.to_string_lossy()])
+            .output()
+            .unwrap()
+            .status
+            .success();
+        assert!(ok, "creating a junction needs no admin rights");
+
+        let c = cat(vec![root.clone()], None, &[]);
+        assert_eq!(scan(&c, &[], false).files, 1, "the junction's contents are not counted");
+        clean(&c, &[], false);
+        assert!(outside.join("precious.txt").exists(), "nothing behind the junction is deleted");
+        assert!(link.exists(), "the junction itself is left alone");
+        let _ = fs::remove_dir(&link);
+        fs::remove_dir_all(&root).unwrap();
+        fs::remove_dir_all(&outside).unwrap();
+    }
+
+    #[test]
+    fn prefix_filter_only_touches_matching_files() {
+        let root = sandbox("prefix");
+        file(&root.join("thumbcache_96.db"), 40, DAY);
+        file(&root.join("ExplorerStartupLog.etl"), 40, DAY);
+        let c = cat(vec![root.clone()], None, &["thumbcache_"]);
+        assert_eq!(clean(&c, &[], false).deleted, 1);
+        assert!(root.join("ExplorerStartupLog.etl").exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn blocked_categories_report_why_and_clean_nothing() {
+        let root = sandbox("blocked");
+        file(&root.join("cache.bin"), 10, DAY);
+        let c = cat(vec![root.clone()], None, &[]);
+        let running = vec!["blocker.exe".to_string()];
+        assert_eq!(scan(&c, &running, false).blocked.as_deref(), Some("Close Blocker to include"));
+        assert_eq!(clean(&c, &running, false).deleted, 0);
+        assert!(root.join("cache.bin").exists());
+
+        let mut admin = cat(vec![root.clone()], None, &[]);
+        admin.needs_admin = true;
+        assert_eq!(scan(&admin, &[], false).blocked.as_deref(), Some("Needs administrator"));
+        assert_eq!(clean(&admin, &[], false).deleted, 0);
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn every_category_root_is_absolute_and_never_a_drive_root() {
+        for c in categories() {
+            for r in &c.roots {
+                assert!(r.is_absolute(), "{} has a relative root {}", c.id, r.display());
+                assert!(r.parent().is_some() && r.components().count() > 2, "{} would clean a drive root: {}", c.id, r.display());
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod live {
+    /// Read-only: scans every real category and prints what it would clean and how long each
+    /// took. `cargo test --release scan_report -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn scan_report() {
+        let elevated = crate::sys::elevate::is_elevated();
+        for c in super::categories() {
+            let t = std::time::Instant::now();
+            let f = super::scan(&c, &[], elevated);
+            println!("{:<32} {:>10} files {:>8} MB {:>7.2?} {:?}", c.name, f.files, f.bytes / 1048576, t.elapsed(), f.blocked);
+        }
+    }
 }
