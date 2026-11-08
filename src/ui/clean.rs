@@ -194,6 +194,8 @@ fn drive_bar(s: &App, l: &Look) -> El {
         .child(
             row()
                 .w_full()
+                .gap(4.0)
+                .flex_wrap()
                 .justify_between()
                 .child(text(format!("System drive · {} used", fmt::bytes(total.saturating_sub(free)))).font(k_small(l)).color(l.muted))
                 .child(text(format!("{} free of {}", fmt::bytes(free), fmt::bytes(total))).font(k_small(l)).color(l.muted)),
@@ -381,6 +383,21 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
         .gap(4.0)
         .child(text("Clean up").font(rune::TextStyle { size: 24.0, line_height: 0.0, ..k.ty.body_medium }).color(l.text))
         .child(text("Give memory back to the apps you are using and clear out files nobody needs.").font(k.ty.small).color(l.muted));
+    let head = row()
+        .w_full()
+        .gap(12.0)
+        .center_y()
+        .flex_wrap()
+        .child(head.grow(1.0).min_w(260.0))
+        .child(
+            Button::new("Why is my PC slow?")
+                .variant(ButtonVariant::Outline)
+                .control_size(ControlSize::Regular)
+                .icon(&icons::SEARCH)
+                .on_press(crate::ui::diagnose::start)
+                .build(k)
+                .key("diag-open"),
+        );
     let mut cards = row().key("clean-cards").w_full().gap(16.0).flex_wrap().items_start();
     if crate::ui::MEMORY_CLEANER {
         cards = cards.child(memory(s, l));

@@ -51,8 +51,11 @@ impl Sampler {
                 let name = p.name().to_string_lossy().into_owned();
                 let session = p.session_id().map(|s| s.as_u32());
                 let kind = classify(exe.as_deref(), &self.windir, session);
-                let DiskUsage { read_bytes, written_bytes, .. } = p.disk_usage();
-                let disk = (((read_bytes + written_bytes) as f64) / elapsed) as u64;
+                let DiskUsage { read_bytes, written_bytes, total_read_bytes, total_written_bytes } = p.disk_usage();
+                // The first time sysinfo sees a process its "delta" is the lifetime total, which
+                // would read as an impossible rate; count that tick as idle.
+                let first = read_bytes == total_read_bytes && written_bytes == total_written_bytes;
+                let disk = if first { 0 } else { (((read_bytes + written_bytes) as f64) / elapsed) as u64 };
                 let ver = exe.as_deref().map(|e| self.ver.get(e)).unwrap_or_default();
                 let description = if ver.description.is_empty() { name.clone() } else { ver.description };
                 let (gpu_pct, gpu_engine) = gpu.get(&p.pid().as_u32()).cloned().unwrap_or_default();

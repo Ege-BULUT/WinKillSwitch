@@ -32,6 +32,10 @@ fn handle(s: &mut App, m: Msg) {
                 return; // the demo machine stays as it was set up
             }
             s.snap = snap;
+            if s.diag.is_some() {
+                let snap = s.snap.clone();
+                ui::diagnose::add_sample(s, &snap, false);
+            }
             s.record_mem(mem);
             s.rebuild_rows();
             if let Some(pid) = s.pending_info.take() {
@@ -185,6 +189,7 @@ fn main() {
             ("info-self", |s| s.pending_info = Some(std::process::id())),
             ("palette", |s| ui::palette::open(s)),
             ("tree", |s| s.appearance.tree = true),
+            ("diagnose", |s| ui::diagnose::start(s)),
             ("pause", |s| s.tab = app::Tab::PauseSwitch),
             ("catppuccin", |s| s.appearance.palette = "catppuccin".into()),
             ("rose-pine", |s| s.appearance.palette = "rose-pine".into()),

@@ -193,6 +193,9 @@ pub fn apply(s: &mut App) {
     if let Ok(cols) = std::env::var("WKS_COLUMNS") {
         s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();
     }
+    if std::env::var("WKS_DIAG").is_ok() {
+        crate::ui::diagnose::start(s);
+    }
     if std::env::var("WKS_LOCKS").is_ok() {
         use crate::sys::locks::{Locker, Report};
         let pid = |n: &str| s.snap.procs.iter().find(|p| p.name == n).map(|p| p.pid).unwrap_or(0);

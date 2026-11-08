@@ -110,6 +110,8 @@ pub struct App {
     pub column_menu: Option<rune::PointerPress>,
     /// The "who is using this file?" sheet, while open.
     pub locks: Option<crate::ui::locks::LocksState>,
+    /// The "why is my PC slow?" sheet, while open.
+    pub diag: Option<crate::ui::diagnose::DiagState>,
     /// A file is being dragged over the window.
     pub drop_hover: bool,
     /// The quick palette, while open.
@@ -173,6 +175,7 @@ impl App {
             column_menu: None,
             palette: None,
             locks: None,
+            diag: None,
             drop_hover: false,
             finding: false,
             find_hover: None,

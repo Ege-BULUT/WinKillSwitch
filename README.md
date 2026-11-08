@@ -66,6 +66,10 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Shows whether WinKillSwitch can manage it, and when it cannot, why: a critical system process, a process Windows protects, or one that runs as SYSTEM or as administrator, with a one click restart as administrator when that helps.
 - Verifies the executable's digital signature, and shows who it runs as, when it started, its parent (click to jump to it), its children, its location and its command line, each copyable.
 
+**Why is my PC slow?**
+- One button (on the Clean tab, or in the quick palette) watches the machine for about five seconds, then answers in plain words: processor, memory, disk space, disk activity, graphics and uptime, worst first.
+- It names the process behind a problem, averaged over the samples so a one-off spike is not blamed, and puts the fix one click away: **Show it**, **Clean memory** or **Analyze disk**.
+
 **Who is using this file?**
 - Drop a file or folder anywhere on the window (or use the quick palette) to see every app and service holding it open, through the same Restart Manager API PowerToys File Locksmith uses.
 - Each holder shows its app name, process, PID and type, with **Details** one click away. Folders are checked file by file, up to 2,000 files.
@@ -114,11 +118,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
   </tr>
   <tr>
     <td><img src="docs/assets/locks-dark.png" alt="Who is using this file"></td>
-    <td><img src="docs/assets/pal-catppuccin-dark.png" alt="Catppuccin Mocha"></td>
+    <td><img src="docs/assets/diagnose-dark.png" alt="Why is my PC slow"></td>
   </tr>
   <tr>
     <td align="center"><sub>Who is using this file?</sub></td>
-    <td align="center"><sub>Catppuccin Mocha</sub></td>
+    <td align="center"><sub>Why is my PC slow?</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/settings-dark.png" alt="Appearance settings"></td>
@@ -218,7 +222,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Global hotkey and quick palette (v0.3.4)
 - [x] Process tree view (v0.3.5)
 - [x] Find out which process is locking a file (v0.3.6)
-- [ ] "Why is my PC slow?" one click diagnosis
+- [x] "Why is my PC slow?" one click diagnosis (v0.3.7)
 - [ ] Notifications when new processes start, by rule
 - [ ] CPU and memory caps per process or group
 - [ ] Wider autostart coverage

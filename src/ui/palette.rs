@@ -25,6 +25,7 @@ pub enum Action {
     Mode(ThemeMode),
     NewGroup,
     Locks,
+    Diagnose,
     Admin,
     Process(Pid),
     Group(u64),
@@ -55,6 +56,7 @@ fn score(hay: &str, q: &str) -> u8 {
 fn commands(s: &App) -> Vec<Item> {
     let cmd = |title: &str, detail: &str, action| Item { title: title.into(), detail: detail.into(), kind: "Command", action };
     let mut v = vec![
+        cmd("Why is my PC slow?", "A few seconds of watching, then a plain answer", Action::Diagnose),
         cmd("Clean memory", "Trim working sets and clear the standby cache", Action::CleanMemory),
         cmd("Analyze disk", "Find temporary files, caches and leftovers", Action::AnalyzeDisk),
         cmd("Go to Processes", "", Action::Tab(Tab::Processes)),
@@ -155,6 +157,7 @@ pub fn run(s: &mut App, a: Action, tx: &mut rune::Tx) {
             s.rename = Some((id, edit));
         }
         Action::Locks => crate::ui::locks::open(s),
+        Action::Diagnose => crate::ui::diagnose::start(s),
         Action::Admin => {
             if crate::sys::elevate::relaunch_as_admin("").is_ok() {
                 std::process::exit(0);
