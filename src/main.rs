@@ -42,7 +42,9 @@ fn handle(s: &mut App, m: Msg) {
                 }
             }
         }
+        Msg::RamStage(st) => s.ram.stage = Some(st),
         Msg::Ram(report) => {
+            s.ram.stage = None;
             s.ram.running = false;
             s.record_mem(report.after);
             s.ram.last = Some(report);
@@ -92,6 +94,11 @@ fn poll(s: &mut App, now: f64, tx: &mut Tx) -> bool {
     let mut animating = false;
     if (s.mem_shown - target).abs() > 0.0005 {
         s.mem_shown += (target - s.mem_shown) * 0.12;
+        animating = true;
+    }
+    let cache_target = if s.mem.total > 0 { s.mem.cache as f32 / s.mem.total as f32 } else { 0.0 };
+    if (s.cache_shown - cache_target).abs() > 0.0005 {
+        s.cache_shown += (cache_target - s.cache_shown) * 0.08;
         animating = true;
     }
     let disk_reveal = matches!(s.disk.phase, DiskPhase::Done { at, .. } if now - at < REVEAL);

@@ -18,5 +18,5 @@ pub use root::view;
 
 /// Release gates: a feature ships (and its tab or card appears) once it has been tested.
 /// v0.2.0 turns on the memory cleaner, v0.3.0 the disk cleaner.
-pub const MEMORY_CLEANER: bool = false;
+pub const MEMORY_CLEANER: bool = true;
 pub const DISK_CLEANER: bool = false;

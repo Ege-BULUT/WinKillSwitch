@@ -69,8 +69,10 @@ pub struct RamReport {
 }
 
 impl RamReport {
+    /// Growth in truly free memory. Purging the standby cache moves pages from "cached" to
+    /// "free" without changing "available", so free memory is what the user actually gains.
     pub fn freed(&self) -> u64 {
-        self.after.available.saturating_sub(self.before.available)
+        self.after.free().saturating_sub(self.before.free())
     }
 }
 
@@ -114,8 +116,9 @@ fn memory_list_command(cmd: u32) -> bool {
 
 /// Trim every working set and, as administrator, purge the standby cache. Blocks for a second or
 /// two; call it off the UI thread.
-pub fn clean(elevated: bool) -> RamReport {
+pub fn clean(elevated: bool, stage: &dyn Fn(&'static str)) -> RamReport {
     let before = status();
+    stage("Trimming apps");
     let mut pids = vec![0u32; 4096];
     let mut needed = 0u32;
     // SAFETY: the buffer's byte size is passed; `needed` reports how much was written.
@@ -139,10 +142,57 @@ pub fn clean(elevated: bool) -> RamReport {
     }
     let mut purged_cache = false;
     if elevated && enable_privilege("SeProfileSingleProcessPrivilege") {
+        stage("Writing changed pages to disk");
         memory_list_command(MEMORY_FLUSH_MODIFIED_LIST);
+        stage("Clearing standby cache");
         purged_cache = memory_list_command(MEMORY_PURGE_STANDBY_LIST);
     }
     // Give the memory manager a moment to move the pages before measuring.
     std::thread::sleep(Duration::from_millis(400));
     RamReport { before, after: status(), trimmed, skipped, purged_cache }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_is_consistent() {
+        let m = status();
+        assert!(m.total > 512 * 1024 * 1024, "total memory looks wrong: {}", m.total);
+        assert!(m.available <= m.total);
+        assert!(m.cache <= m.available);
+        assert_eq!(m.in_use() + m.available, m.total);
+        assert!((0.0..=1.0).contains(&m.used_frac()));
+    }
+
+    #[test]
+    fn freed_never_underflows() {
+        let mut r = RamReport::default();
+        r.before.available = 10;
+        r.after.available = 4; // memory got busier while cleaning (no cache: all of it free)
+        assert_eq!(r.freed(), 0);
+    }
+}
+
+#[cfg(test)]
+mod live {
+    /// Runs the real cleaner once and prints what it did. Ignored by default because it trims
+    /// every working set on the machine: `cargo test --release clean_reports -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn clean_reports() {
+        let t = std::time::Instant::now();
+        let r = super::clean(crate::sys::elevate::is_elevated(), &|st| println!("stage: {st}"));
+        println!(
+            "took {:?}: trimmed {} skipped {} purged {} freed {} MB (free {} -> {} MB)",
+            t.elapsed(),
+            r.trimmed,
+            r.skipped,
+            r.purged_cache,
+            r.freed() / 1048576,
+            r.before.free() / 1048576,
+            r.after.free() / 1048576
+        );
+    }
 }

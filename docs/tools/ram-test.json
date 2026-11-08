@@ -1,0 +1,4 @@
+{"events": [
+  {"t": 0.6, "type": "tap", "key": "clean-ram", "hold": 0.08},
+  {"t": 60.0, "type": "mark", "name": "end"}
+]}

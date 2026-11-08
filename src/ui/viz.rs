@@ -33,7 +33,12 @@ pub fn sparkline(values: &[f32], w: f32, h: f32, line: Color, fill: Color) -> El
         return rune::el().size(w, h);
     }
     let step = w / (values.len() - 1) as f32;
-    let pts: Vec<[f32; 2]> = values.iter().enumerate().map(|(i, v)| [i as f32 * step, 2.0 + (h - 4.0) * (1.0 - v.clamp(0.0, 1.0))]).collect();
+    // Scale to the data's own range (at least ten points wide) so small swings stay visible.
+    let lo = values.iter().copied().fold(f32::MAX, f32::min);
+    let hi = values.iter().copied().fold(f32::MIN, f32::max);
+    let span = (hi - lo).max(0.10);
+    let base = (lo + hi) / 2.0 - span / 2.0;
+    let pts: Vec<[f32; 2]> = values.iter().enumerate().map(|(i, v)| [i as f32 * step, 3.0 + (h - 6.0) * (1.0 - ((v - base) / span).clamp(0.0, 1.0))]).collect();
     let mut area = pts.clone();
     area.push([w, h]);
     area.push([0.0, h]);

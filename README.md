@@ -36,7 +36,7 @@ WinKillSwitch is a desktop process manager for Windows. It shows what is running
 The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyco/rune). Panels are real glass over a live gradient, every change animates on springs, and the whole look follows the palette you pick.
 
 > [!NOTE]
-> WinKillSwitch is in **alpha**. The interface, process monitoring, groups and theming work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
+> WinKillSwitch is in **alpha**. The interface, process monitoring, groups, theming and the memory cleaner work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
 
 ## Features
 
@@ -44,6 +44,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Live process table refreshed every 1.5 seconds: name, PID, CPU and memory, plus machine wide CPU and memory use.
 - Search by name, PID or executable path.
 - Sortable, resizable, virtualised table with multi selection and keyboard navigation.
+
+**Memory cleaner**
+- A ring gauge of memory in use, cached and free, with a two minute history.
+- One **Clean memory** button: trims every app's working set and, as administrator, clears the standby cache. Nothing is closed.
+- Shows exactly what it freed, as a number that counts up and as the cached slice of the ring shrinking.
 
 **Groups**
 - Create, rename in place and delete groups of processes, keyed by executable path.
@@ -70,6 +75,14 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
   <tr>
     <td align="center"><sub>Processes and group inspector, Rune Aurora dark</sub></td>
     <td align="center"><sub>Same view in light mode</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/clean-dark.png" alt="Memory cleaner"></td>
+    <td><img src="docs/assets/pause-dark.png" alt="PauseSwitch"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Memory cleaner after a clean</sub></td>
+    <td align="center"><sub>PauseSwitch</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/settings-dark.png" alt="Appearance settings"></td>
@@ -145,7 +158,7 @@ The first build compiles Rune and its GPU stack from source and takes a few minu
 Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, **v0.3.x** ships the rest of this list one feature at a time, and **v0.4** is the complete, tested set.
 
 - [x] Responsive under load: sampling and cleaning run off the UI thread, and the UI runs at above normal priority
-- [ ] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed
+- [x] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed (v0.2)
 - [ ] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step
 - [ ] "What is this process?" card that also explains why access is denied
 - [ ] Column picker on header right click, including per process GPU usage

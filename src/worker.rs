@@ -22,6 +22,7 @@ pub enum Cmd {
 
 pub enum Msg {
     Sample(Snapshot, MemStatus),
+    RamStage(&'static str),
     Ram(RamReport),
     DiskScanning { done: usize, total: usize, current: String },
     DiskFound(Vec<(Category, Found)>),
@@ -79,7 +80,11 @@ fn run(cmds: Receiver<Cmd>, out: Sender<Msg>) {
             Ok(Cmd::CleanRam { elevated }) => {
                 let out = out.clone();
                 std::thread::spawn(move || {
-                    let _ = out.send(Msg::Ram(memory::clean(elevated)));
+                    let stage_out = out.clone();
+                    let r = memory::clean(elevated, &move |st| {
+                        let _ = stage_out.send(Msg::RamStage(st));
+                    });
+                    let _ = out.send(Msg::Ram(r));
                 });
             }
             Ok(Cmd::ScanDisk { running, elevated }) => {

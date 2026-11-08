@@ -24,6 +24,8 @@ pub enum Tab {
 #[derive(Default)]
 pub struct RamState {
     pub running: bool,
+    /// What the cleaner is doing right now, while it runs.
+    pub stage: Option<&'static str>,
     pub last: Option<RamReport>,
     /// Clock time the last result arrived, for the count-up and ring pulse.
     pub shown_at: f64,
@@ -90,6 +92,8 @@ pub struct App {
     pub mem_hist: VecDeque<f32>,
     /// The ring's displayed fraction, eased toward `mem` every frame.
     pub mem_shown: f32,
+    /// The cached slice's displayed fraction, eased the same way.
+    pub cache_shown: f32,
     pub ram: RamState,
     pub disk: DiskState,
 
@@ -135,6 +139,7 @@ impl App {
             mem,
             mem_hist: VecDeque::new(),
             mem_shown: mem.used_frac(),
+            cache_shown: if mem.total > 0 { mem.cache as f32 / mem.total as f32 } else { 0.0 },
             ram: RamState::default(),
             disk: DiskState { phase: DiskPhase::Idle, items: Vec::new(), drive: sys::cleanup::system_drive(), results: Vec::new() },
             appearance: saved.appearance.clone(),

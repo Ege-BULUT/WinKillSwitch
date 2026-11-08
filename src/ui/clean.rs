@@ -63,11 +63,13 @@ fn memory(s: &App, l: &Look) -> El {
     let k = &l.kit;
     let m = s.mem;
     let used = s.mem_shown.clamp(0.0, 1.0);
-    let cache = if m.total > 0 { m.cache as f32 / m.total as f32 } else { 0.0 };
+    let cache = s.cache_shown.clamp(0.0, 1.0);
     let success = k.c.success.icon;
 
     // After a clean, the freed slice glows green and fades, and the number counts up.
-    let mut segments = vec![(0.0, used, l.accent), (used, (used + cache).min(1.0), l.accent.alpha(0.38))];
+    // Cached memory in the palette's second accent, so the two slices read apart at a glance.
+    let cached_color = crate::ui::theme::color(l.v.accents[(s.appearance.accent + 1) % l.v.accents.len()].1).alpha(0.75);
+    let mut segments = vec![(0.0, used, l.accent), (used, (used + cache).min(1.0), cached_color)];
     let mut result: Option<El> = None;
     if let Some(r) = &s.ram.last {
         let t = (s.clock - s.ram.shown_at) / REVEAL;
@@ -122,7 +124,7 @@ fn memory(s: &App, l: &Look) -> El {
         .flex_wrap()
         .justify_center()
         .child(chip(l.accent, "In use", m.in_use()))
-        .child(chip(l.accent.alpha(0.45), "Cached", m.cache))
+        .child(chip(cached_color, "Cached", m.cache))
         .child(chip(l.text.alpha(0.18), "Free", m.free()));
 
     let hist: Vec<f32> = s.mem_hist.iter().copied().collect();
@@ -136,7 +138,7 @@ fn memory(s: &App, l: &Look) -> El {
     let button = big_button(
         l,
         "clean-ram",
-        if s.ram.running { "Cleaning memory…".into() } else { "Clean memory".into() },
+        if s.ram.running { format!("{}…", s.ram.stage.unwrap_or("Cleaning memory")) } else { "Clean memory".into() },
         s.ram.running,
         !s.ram.running,
         move |s: &mut App| {

@@ -122,7 +122,19 @@ pub fn apply(s: &mut App) {
     s.tab = match env("WKS_TAB").as_deref() {
         Some("settings") => Tab::Settings,
         Some("pause") => Tab::PauseSwitch,
+        Some("clean") => Tab::Clean,
         _ => Tab::Processes,
     };
+    // A 32 GB machine, just after a clean: the history dips and the result shows.
+    use crate::sys::memory::{MemStatus, RamReport};
+    let gb = 1024 * 1024 * 1024u64;
+    let before = MemStatus { total: 32 * gb, available: 13 * gb, cache: 4 * gb };
+    let after = MemStatus { total: 32 * gb, available: 13 * gb + gb * 6 / 10, cache: gb * 12 / 10 };
+    s.mem = after;
+    s.mem_shown = after.used_frac();
+    s.cache_shown = after.cache as f32 / after.total as f32;
+    s.mem_hist = (0..60).map(|i| if i < 44 { 0.595 + 0.006 * ((i as f32) * 0.7).sin() } else { 0.575 + 0.002 * ((i as f32) * 0.9).sin() }).collect();
+    s.ram.last = Some(RamReport { before, after, trimmed: 214, skipped: 9, purged_cache: true });
+    s.ram.shown_at = -100.0;
     s.rebuild_rows();
 }
