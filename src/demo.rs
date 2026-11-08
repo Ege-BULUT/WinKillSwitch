@@ -69,6 +69,15 @@ pub fn apply(s: &mut App) {
             }
         })
         .collect();
+    let mut procs: Vec<ProcInfo> = procs;
+    // Chrome's helpers are children of its first process, which started a few hours ago.
+    let chrome_pid = procs[0].pid;
+    for p in procs.iter_mut().skip(1).filter(|p| p.name == "chrome.exe") {
+        p.parent = Some(chrome_pid);
+    }
+    procs[0].start = crate::model::now_secs().saturating_sub(3 * 3600 + 25 * 60);
+    procs[0].cmd = r#""C:\Program Files\Google\Chrome\Application\chrome.exe" --profile-directory=Default --restore-last-session"#.into();
+    procs[0].description = "Google Chrome".into();
     s.snap = Snapshot { procs, total_mem: 32 * 1024 * 1024 * 1024, used_mem: 15 * 1024 * 1024 * 1024, cpu_total: 18.0 };
 
     let chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe";
@@ -161,6 +170,21 @@ pub fn apply(s: &mut App) {
             s.disk.phase = DiskPhase::Done { freed, deleted: 48_210, skipped: 41, at: -100.0 };
         }
         _ => {}
+    }
+    if std::env::var("WKS_INFO").is_ok() {
+        use crate::sys::info::{Account, Detail, Signature, Verdict};
+        s.info = Some(crate::app::InfoState {
+            pid: chrome_pid,
+            detail: Some(Detail {
+                pid: chrome_pid,
+                signature: Signature::Valid,
+                account: Account::User,
+                elevated: false,
+                protected: false,
+                verdict: Verdict::Ok,
+                reason: "You have the rights to manage it from here.".into(),
+            }),
+        });
     }
     s.rebuild_rows();
 }

@@ -34,6 +34,9 @@ fn handle(s: &mut App, m: Msg) {
             s.snap = snap;
             s.record_mem(mem);
             s.rebuild_rows();
+            if let Some(pid) = s.pending_info.take() {
+                s.open_info(pid);
+            }
             let events = s.guards.check(&s.snap);
             for ev in events {
                 match ev {
@@ -62,6 +65,11 @@ fn handle(s: &mut App, m: Msg) {
                 .collect();
             s.disk.items.sort_by(|a, b| b.found.bytes.cmp(&a.found.bytes));
             s.disk.phase = DiskPhase::Ready;
+        }
+        Msg::Detail(d) => {
+            if let Some(info) = s.info.as_mut().filter(|i| i.pid == d.pid) {
+                info.detail = Some(d);
+            }
         }
         Msg::DiskCleaning { done, total, current, freed } => s.disk.phase = DiskPhase::Cleaning { done, total, current, freed },
         Msg::DiskCleaned { results, drive } => {
@@ -159,6 +167,7 @@ fn main() {
             ("demo", demo::apply),
             ("settings", |s| s.tab = app::Tab::Settings),
             ("clean", |s| s.tab = app::Tab::Clean),
+            ("info-self", |s| s.pending_info = Some(std::process::id())),
             ("pause", |s| s.tab = app::Tab::PauseSwitch),
             ("catppuccin", |s| s.appearance.palette = "catppuccin".into()),
             ("rose-pine", |s| s.appearance.palette = "rose-pine".into()),

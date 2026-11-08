@@ -56,6 +56,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - **Clean** shows what it freed, file counts and anything skipped because it was in use.
 - Never follows links or junctions, never deletes the folders themselves, and keeps temporary files changed in the last week.
 
+**About this process**
+- Double click any process, or press **Details**, for a card that says what it is in plain language, with a note on whether ending it is safe for about 40 common Windows processes.
+- Shows whether WinKillSwitch can manage it, and when it cannot, why: a critical system process, a process Windows protects, or one that runs as SYSTEM or as administrator, with a one click restart as administrator when that helps.
+- Verifies the executable's digital signature, and shows who it runs as, when it started, its parent (click to jump to it), its children, its location and its command line, each copyable.
+
 **Groups**
 - Create, rename in place and delete groups of processes, keyed by executable path.
 - Add the selected rows or the active process to a group; remove members one by one.
@@ -89,6 +94,14 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
   <tr>
     <td align="center"><sub>Memory freed, disk analyzed and ready to clean</sub></td>
     <td align="center"><sub>After a disk clean, Catppuccin Latte</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/info-dark.png" alt="About this process"></td>
+    <td><img src="docs/assets/pause-dark.png" alt="PauseSwitch"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>About this process: what it is and whether it can be managed</sub></td>
+    <td align="center"><sub>PauseSwitch</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/settings-dark.png" alt="Appearance settings"></td>
@@ -166,7 +179,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Responsive under load: sampling and cleaning run off the UI thread, and the UI runs at above normal priority
 - [x] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed (v0.2)
 - [x] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step (v0.3)
-- [ ] "What is this process?" card that also explains why access is denied
+- [x] "What is this process?" card that also explains why access is denied (v0.3.1)
 - [ ] Column picker on header right click, including per process GPU usage
 - [ ] Find a process by pointing at its window
 - [ ] Global hotkey and quick palette

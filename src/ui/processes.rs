@@ -51,6 +51,13 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
             s.active_pid = Some(pid);
         }
     })
+    // Double click or Return: what is this process?
+    .on_open(|s: &mut App, id, _| {
+        if let Ok(pid) = id.parse::<u32>() {
+            s.active_pid = Some(pid);
+            s.open_info(pid);
+        }
+    })
     .zebra(true)
     .style(l.table_style())
     .build(s, k)
@@ -104,6 +111,17 @@ fn action_bar(s: &App, l: &Look) -> El {
     let has_active = s.active_pid.is_some();
     let has_sel = s.table.selected_len() > 0;
 
+    let details = Button::new("Details")
+        .variant(ButtonVariant::Outline)
+        .control_size(ControlSize::Regular)
+        .disabled(!has_active)
+        .on_press(|s: &mut App| {
+            if let Some(pid) = s.active_pid {
+                s.open_info(pid);
+            }
+        })
+        .build(k)
+        .key("details");
     let kill = Button::new("End process")
         .variant(ButtonVariant::Danger)
         .control_size(ControlSize::Regular)
@@ -153,5 +171,5 @@ fn action_bar(s: &App, l: &Look) -> El {
         .center_y()
         .gaps(8.0, 8.0)
         .child(row().gap(8.0).center_y().grow(1.0).min_w(0.0).child(add).child(hint.truncate().min_w(0.0)))
-        .child(row().gap(8.0).child(kill_rel).child(kill))
+        .child(row().gap(8.0).child(details).child(kill_rel).child(kill))
 }

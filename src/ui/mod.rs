@@ -5,6 +5,7 @@ pub mod gfx;
 pub mod glass;
 pub mod groups;
 pub mod icons;
+pub mod info;
 pub mod overlays;
 pub mod palettes;
 pub mod pauseswitch;

@@ -39,6 +39,13 @@ pub enum DiskPhase {
     Done { freed: u64, deleted: u64, skipped: u64, at: f64 },
 }
 
+/// The "about this process" sheet.
+pub struct InfoState {
+    pub pid: Pid,
+    /// Filled in once the worker has inspected the process.
+    pub detail: Option<crate::sys::info::Detail>,
+}
+
 pub struct DiskItem {
     pub cat: Category,
     pub found: Found,
@@ -96,6 +103,9 @@ pub struct App {
     pub cache_shown: f32,
     pub ram: RamState,
     pub disk: DiskState,
+    pub info: Option<InfoState>,
+    /// Open the info sheet for this pid once it shows up in a sample (headless scenes).
+    pub pending_info: Option<Pid>,
 
     pub groups: Vec<Group>,
     pub next_id: u64,
@@ -141,6 +151,8 @@ impl App {
             mem_shown: mem.used_frac(),
             cache_shown: if mem.total > 0 { mem.cache as f32 / mem.total as f32 } else { 0.0 },
             ram: RamState::default(),
+            info: None,
+            pending_info: None,
             disk: DiskState { phase: DiskPhase::Idle, items: Vec::new(), drive: sys::cleanup::system_drive(), results: Vec::new() },
             appearance: saved.appearance.clone(),
             demo: false,
@@ -217,6 +229,14 @@ impl App {
     /// Ask for a fresh sample now (after an action that changed the process list).
     pub fn refresh_now(&mut self) {
         self.send(Cmd::Refresh);
+    }
+
+    /// Open the "about this process" sheet and start inspecting it.
+    pub fn open_info(&mut self, pid: Pid) {
+        let Some(p) = self.snap.get(pid) else { return };
+        let cmd = Cmd::Inspect { pid, name: p.name.clone(), exe: p.exe.clone(), admin: self.elevated };
+        self.info = Some(InfoState { pid, detail: None });
+        self.send(cmd);
     }
 
     /// Lowercase image names of everything running, for the disk cleaner's "close X first" checks.
