@@ -1,0 +1,797 @@
+{
+  "_meta": {
+    "description": "Task board data. Edit via scripts/tasks_cli.py, not by hand. Run its `render` command afterward to update tasks.html. Fully local, nothing here is ever pushed anywhere.",
+    "columns": [
+      "backlog",
+      "analyze",
+      "planning",
+      "development",
+      "ready_for_review",
+      "testing",
+      "accepted",
+      "rejected"
+    ],
+    "columnLabels": {
+      "backlog": "Backlog",
+      "analyze": "Analyze",
+      "planning": "Planning",
+      "development": "Development",
+      "ready_for_review": "Ready for Review",
+      "testing": "Testing",
+      "accepted": "Accepted (Done)",
+      "rejected": "Rejected"
+    },
+    "urgencyLevels": [
+      "low",
+      "medium",
+      "high",
+      "critical"
+    ],
+    "taskIdPrefix": "T-",
+    "nextTaskSeq": 22
+  },
+  "tasks": [
+    {
+      "id": "T-0001",
+      "title": "Cargo crate with Rune + rune-kit git deps",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "build",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:55",
+      "updatedAt": "2026-11-08T21:17:20",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:55",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:26",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:20",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0002",
+      "title": "Shared model: ProcInfo, Group, Member, PauseRecord",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:55",
+      "updatedAt": "2026-11-08T21:17:20",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:55",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:26",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:20",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0003",
+      "title": "JSON store in %APPDATA%\\winkillswitch",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:27",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0004",
+      "title": "Background process sampler (sysinfo) feeding the UI",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:28",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0005",
+      "title": "App shell: sidebar tabs + groups section",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:31",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0006",
+      "title": "Processes table: sort, search, multi-select, CPU/mem",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:32",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0007",
+      "title": "Theme, motion and toasts",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:32",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0008",
+      "title": "Related-process resolver (same app folder + child tree)",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:40",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:38",
+          "text": "Interface defined in src/sys/related.rs; implementation deferred (safety classifier halted the process-targeting code). Returns empty."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:29",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:38",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Interface defined in src/sys/related.rs; implementation deferred (safety classif…"
+        },
+        {
+          "ts": "2026-11-08T21:17:40",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0009",
+      "title": "Kill / kill-all-related with confirm dialog",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:40",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:39",
+          "text": "Confirm dialog + action wiring done in actions.rs/overlays.rs; the end-process call (src/sys/kill.rs) is a no-op stub reporting 'not implemented'."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:29",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:39",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Confirm dialog + action wiring done in actions.rs/overlays.rs; the end-process c…"
+        },
+        {
+          "ts": "2026-11-08T21:17:40",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0010",
+      "title": "Respawn guard released on manual launch",
+      "description": "",
+      "status": "rejected",
+      "urgency": "medium",
+      "tag": "core",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0011",
+      "title": "Group CRUD + rename in place",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0012",
+      "title": "Group members: multi-select add/remove, add/remove all related",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0013",
+      "title": "Kill group / pause group buttons",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0014",
+      "title": "Autostart discovery: Run keys, startup folder, services, tasks",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "system",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:39",
+          "text": "Interface in src/sys/autostart.rs; discovery/apply/revert deferred. Stub is a safe no-op."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:39",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Interface in src/sys/autostart.rs; discovery/apply/revert deferred. Stub is a sa…"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0015",
+      "title": "Apply + revert pause with recorded originals",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "system",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0016",
+      "title": "PauseSwitch tab UI",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0017",
+      "title": "Elevation check + restart as administrator",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "system",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T21:17:24",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:31",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:24",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0018",
+      "title": "Tray icon + keep running",
+      "description": "",
+      "status": "backlog",
+      "urgency": "low",
+      "tag": "ui",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T00:36:58",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=low"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0019",
+      "title": "Release build + README",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "build",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T21:17:24",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:24",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0020",
+      "title": "Glass theme + palette settings",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M7",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T23:15:52",
+      "updatedAt": "2026-11-08T23:15:53",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T23:15:52",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T23:15:53",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0021",
+      "title": "Feature research (5 categories x 10)",
+      "description": "research/index.html, data in research/features.json",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "research",
+      "milestone": "M7",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T23:15:52",
+      "updatedAt": "2026-11-08T23:15:53",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T23:15:52",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T23:15:53",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    }
+  ]
+}

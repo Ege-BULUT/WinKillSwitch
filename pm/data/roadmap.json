@@ -1,0 +1,76 @@
+{
+  "_meta": {
+    "description": "Roadmap data. Edit via scripts/roadmap_cli.py, not by hand. Run its `render` command afterward to update roadmap.html. Fully local, nothing here is ever pushed anywhere.",
+    "milestoneIdPrefix": "M",
+    "nextMilestoneSeq": 8
+  },
+  "intro": "The plan, sequenced.",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Foundation",
+      "status": "done",
+      "description": "Cargo crate on Rune (pinned dev rev), shared data model, persisted store, sysinfo process snapshots.",
+      "why": "Every other milestone builds on the shared types and the live process feed.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M2",
+      "name": "Process Manager UI",
+      "status": "done",
+      "description": "Rune/rune-kit shell: sidebar, Processes tab with live sortable multi-select table, search, theme and motion.",
+      "why": "The core task-manager experience.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M3",
+      "name": "Kill and Related",
+      "status": "next",
+      "description": "Kill, kill tree, kill-all-related with a confirmation dialog listing every process first; respawn guard released on manual launch.",
+      "why": "The headline feature over the stock Task Manager.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M4",
+      "name": "Groups",
+      "status": "done",
+      "description": "Create, rename, delete groups; multi-select add/remove; add/remove all related from the active member; kill group / pause group.",
+      "why": "Lets the user act on saved sets in one click.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M5",
+      "name": "PauseSwitch",
+      "status": "planned",
+      "description": "Revertable autostart prevention: StartupApproved entries, service start types, scheduled tasks; originals recorded in the store and restored on toggle-off.",
+      "why": "Stops apps from coming back after reboot until the user says so.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M6",
+      "name": "Polish and Ship",
+      "status": "planned",
+      "description": "Admin relaunch, tray icon, release build, README.",
+      "why": "A finished, runnable app.",
+      "examples": [],
+      "chips": []
+    },
+    {
+      "id": "M7",
+      "name": "Glass theme",
+      "status": "done",
+      "description": "Palette-tinted mesh gradient background, liquid/fluted/frosted glass panels and a floating glass tab bar with a spring-animated drop (rune-fx compositor); 6 palettes with official light/dark variants, accent, glass style/strength and animated background in Settings, all persisted.",
+      "why": "",
+      "examples": [],
+      "chips": []
+    }
+  ],
+  "notes": [
+    "Kill/related/guard and PauseSwitch autostart (M3, M5) have working interfaces but ship as no-op stubs in this build."
+  ]
+}

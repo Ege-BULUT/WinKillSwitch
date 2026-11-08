@@ -1,0 +1,36 @@
+[package]
+name = "winkillswitch"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "A sleek Windows process manager: kill all related, groups and PauseSwitch autostart control."
+
+[dependencies]
+rune = { git = "https://github.com/anomalyco/rune", rev = "b788feb9a3be94e07a41664a6eee308fade62619" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "b788feb9a3be94e07a41664a6eee308fade62619" }
+rune-fx = { git = "https://github.com/anomalyco/rune", rev = "b788feb9a3be94e07a41664a6eee308fade62619" }
+# Same major as Rune's own wgpu, for the effect compositor's texture formats.
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl", "dx12", "vulkan"] }
+sysinfo = { version = "0.38", default-features = false, features = ["system", "user"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+winreg = "0.55"
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Console",
+    "Win32_Storage_FileSystem",
+    "Win32_System_ProcessStatus",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_System_Services",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.dev.package."*"]
+debug = false
+opt-level = 1
+
+[profile.release]
+codegen-units = 16

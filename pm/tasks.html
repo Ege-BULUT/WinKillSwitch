@@ -1,0 +1,1852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Board · OpenLead Workspace</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1b1b18; --sub: #6b6b63;
+    --line: #e5e3dc; --mono-bg: #f1efe8;
+    --good: #1c7a4d; --good-bg: #e8f5ee;
+    --bad: #b3261e; --bad-bg: #fdecea;
+    --warn: #9a6700; --warn-bg: #fff4de;
+    --dup: #5b4fc4; --dup-bg: #ecebfb;
+    --accent: #2f6fed; --accent-bg: rgba(47,111,237,0.10);
+    --crit: #b3261e; --crit-bg: #fdecea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181a; --panel: #1f2023; --ink: #eceae5; --sub: #9a9890;
+      --line: #33342f; --mono-bg: #26272a;
+      --good: #5fd39a; --good-bg: #123326;
+      --bad: #ff8a80; --bad-bg: #3a1a17;
+      --warn: #f0c674; --warn-bg: #3a2f10;
+      --dup: #b8b0ff; --dup-bg: #262151;
+      --accent: #7aa2f7; --accent-bg: rgba(122,162,247,0.12);
+      --crit: #ff8a80; --crit-bg: #3a1a17;
+    }
+  }
+  /* Scrollbars. A page here nests two or three scroll regions — a board's column row, a
+     column's card list, a modal, a code block — and the platform default draws every one
+     of them as the same chunky grey rail, which makes a page read as a stack of framed
+     boxes instead of one surface. Thin, transparent track, thumb from the palette above,
+     darker under the pointer. Scoped to elements inside the page, never the window's own
+     scrollbar, which should stay native. */
+  :root { --scroll-thumb: rgba(0,0,0,0.18); --scroll-thumb-hover: rgba(0,0,0,0.34); }
+  @media (prefers-color-scheme: dark) {
+    :root { --scroll-thumb: rgba(255,255,255,0.16); --scroll-thumb-hover: rgba(255,255,255,0.32); }
+  }
+  body * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+  body *::-webkit-scrollbar { width: 9px; height: 9px; }
+  body *::-webkit-scrollbar-track { background: transparent; }
+  body *::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px;
+    border: 2px solid transparent; background-clip: content-box; }
+  body *::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover);
+    background-clip: content-box; }
+  body *::-webkit-scrollbar-corner { background: transparent; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 0 4rem;
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, .mono { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.92em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  body.has-ol-sidebar { margin-left: 232px; }
+  .ol-sidebar {
+    position: fixed; top: 0; left: 0; width: 232px; height: 100vh; overflow-y: auto;
+    background: #fbfbfa; border-right: 1px solid #e5e3dc; padding: 1.6rem 1rem 1.6rem 1.3rem;
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    z-index: 100; box-sizing: border-box;
+  }
+  .ol-sidebar .kicker { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8778; font-weight: 700; margin-bottom: 0.25rem; }
+  .ol-sidebar .title { font-size: 0.95rem; font-weight: 700; color: #1b1b18; margin-bottom: 1.3rem; line-height: 1.3; }
+  .ol-sidebar a { display: block; padding: 0.45rem 0.6rem; margin-bottom: 0.1rem; border-radius: 7px; color: #3a3a34; text-decoration: none; font-size: 0.86rem; }
+  .ol-sidebar a:hover { background: #eeece4; }
+  .ol-sidebar a.active { background: #2f6fed; color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    .ol-sidebar { background: #1a1b1e; border-right-color: #33342f; }
+    .ol-sidebar .kicker { color: #9a9890; }
+    .ol-sidebar .title { color: #eceae5; }
+    .ol-sidebar a { color: #cfcdc6; }
+    .ol-sidebar a:hover { background: #26272a; }
+    .ol-sidebar a.active { background: #7aa2f7; color: #14151a; }
+  }
+  @media (max-width: 860px) {
+    .ol-sidebar { position: static; width: auto; height: auto; border-right: none; border-bottom: 1px solid #e5e3dc; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+    .ol-sidebar .title, .ol-sidebar .kicker { width: 100%; }
+    body.has-ol-sidebar { margin-left: 0; }
+  }
+
+  header { padding: 2.4rem 1.5rem 1.2rem; max-width: 1400px; margin: 0 auto; }
+  header .kicker { color: var(--sub); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  header h1 { margin: 0.3rem 0 0.5rem; font-size: 2rem; }
+  header p.scope { color: var(--sub); margin: 0 0 1rem; font-size: 1rem; max-width: 80ch; }
+
+  /* Density toggle. Relax is the board as it was: columns at a comfortable 236px and a
+     sideways scroll. Fit gives up the scroll instead — the eight columns divide whatever
+     width the viewport has, cards get narrower and taller, and nothing scrolls sideways.
+     Every size below is a variable so the two modes are the same rules with different
+     numbers, rather than a second stylesheet that drifts from the first. */
+  :root {
+    --col-w: 236px; --col-gap: 0.9rem; --col-pad: 0.8rem;
+    --card-pad-y: 0.7rem; --card-pad-x: 0.8rem; --card-title: 0.88rem;
+    --chip-size: 0.64rem; --cards-h: 72vh;
+  }
+  html.fit {
+    --col-w: 0px; --col-gap: 0.45rem; --col-pad: 0.45rem;
+    --card-pad-y: 0.5rem; --card-pad-x: 0.55rem; --card-title: 0.8rem;
+    --chip-size: 0.6rem; --cards-h: 78vh;
+  }
+
+  /* Fit-only trims. At ~120px of card width the milestone chip is redundant — the board
+     is one milestone deep in practice and the modal still shows it — and the column
+     head's gap has to give before its label does. Nothing here hides a number: the count,
+     the urgency and the tag all stay. */
+  html.fit .col-head { gap: 0.3rem; margin-bottom: 0.5rem; }
+  html.fit .card .card-meta { gap: 0.22rem; }
+  html.fit .card .mschip { display: none; }
+  html.fit .board-wrap { overflow-x: hidden; padding-left: 0.75rem; padding-right: 0.75rem; }
+  html.fit .toolbar { max-width: none; }
+  /* Without this the row keeps its max-content floor and still forces a sideways scroll,
+     which is the one thing fit mode exists to remove. */
+  html.fit .board { min-width: 0; width: 100%; }
+  /* Fit lays the sidebar out the way the narrow-viewport breakpoint already does, so the
+     board gets the full width and the navigation stays visible. Same rules, no second
+     layout to keep in step. */
+  html.fit .ol-sidebar { position: static; width: auto; height: auto; border-right: none;
+    border-bottom: 1px solid #e5e3dc; display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; }
+  html.fit .ol-sidebar .title, html.fit .ol-sidebar .kicker { width: 100%; }
+  html.fit body.has-ol-sidebar { margin-left: 0; }
+  @media (prefers-color-scheme: dark) {
+    html.fit .ol-sidebar { border-bottom-color: #33342f; }
+  }
+  .density { display: inline-flex; padding: 2px; gap: 2px; background: var(--mono-bg);
+    border: 1px solid var(--line); border-radius: 9px; }
+  .density button { font: inherit; font-size: 0.8rem; padding: 0.32rem 0.7rem; cursor: pointer;
+    border: 0; border-radius: 7px; background: transparent; color: var(--sub); }
+  .density button:hover { color: var(--ink); }
+  .density button[aria-pressed="true"] { background: var(--panel); color: var(--ink);
+    font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.07); }
+  .toolbar { max-width: 1400px; margin: 0 auto 1.2rem; padding: 0 1.5rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  .toolbar input, .toolbar select { background: var(--panel); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.88rem; font-family: inherit; }
+  .toolbar input { flex: 1 1 220px; }
+  .toolbar .count { color: var(--sub); font-size: 0.85rem; margin-left: auto; white-space: nowrap; }
+
+  /* The column row scrolls sideways, so snap to column starts — a half column parked
+     under the viewport edge is what made this feel cramped. */
+  .board-wrap { max-width: 100%; overflow-x: auto; padding: 0 1.5rem 0.25rem;
+    scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  /* max-content, not a pixel figure, so changing .col's min-width below cannot leave a
+     stale number here. The old 1360px floor divided into about 144px of usable card width
+     across eight columns — narrower than the average task title, so cards wrapped to four
+     or five lines and the chips spilled onto a row of their own. */
+  .board { display: flex; gap: var(--col-gap); min-width: max-content; padding-bottom: 0.4rem;
+    align-items: flex-start; }
+  .col { flex: 1 1 0; min-width: var(--col-w); background: var(--mono-bg); border-radius: 12px;
+    padding: var(--col-pad); display: flex; flex-direction: column; scroll-snap-align: start; }
+  /* Sticky, because a column of a few hundred cards scrolls far enough to lose its name. */
+  .col-head { display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.7rem; padding: 0.1rem 0.2rem 0.5rem; position: sticky; top: 0; z-index: 2;
+    background: var(--mono-bg); border-bottom: 1px solid var(--line); }
+  .col.col-accepted .col-head { background: var(--good-bg); }
+  .col.col-rejected .col-head { background: var(--bad-bg); }
+  .col-head h2 { font-size: calc(var(--chip-size) + 0.18rem); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sub); font-weight: 700; }
+  .col-head .n { font-size: calc(var(--chip-size) + 0.1rem); flex: 0 0 auto; color: var(--sub); background: var(--panel); border-radius: 999px; padding: 0.05rem 0.5rem; }
+  .col.col-accepted { background: var(--good-bg); }
+  .col.col-rejected { background: var(--bad-bg); opacity: 0.85; }
+  .col-cards { display: flex; flex-direction: column; gap: 0.6rem; min-height: 60px;
+    max-height: var(--cards-h); overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain;
+    padding-right: 0.3rem; }
+  .empty-state { color: var(--sub); font-size: 0.82rem; padding: 0.9rem 0.4rem; text-align: center; border: 1px dashed var(--line); border-radius: 8px; }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: var(--card-pad-y) var(--card-pad-x); cursor: pointer; transition: border-color 0.12s, opacity 0.12s; }
+  .card:hover { border-color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card { min-width: 0; }
+  .card .card-foot > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card.draggable { cursor: grab; }
+  .card.draggable:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; }
+  .col.drag-target .col-cards { background: var(--accent-bg); outline: 2px dashed var(--accent); outline-offset: -4px; border-radius: 8px; }
+  .col.drag-blocked .col-cards { outline: 2px dashed var(--bad); outline-offset: -4px; border-radius: 8px; }
+  .dd-toast { position: fixed; bottom: 1.4rem; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 0.7rem 0.95rem; max-width: 640px; box-shadow: 0 6px 24px rgba(0,0,0,0.18); display: none; z-index: 300; font-size: 0.85rem; }
+  .dd-toast.show { display: block; }
+  .dd-toast .dd-title { font-weight: 700; margin-bottom: 0.35rem; }
+  .dd-toast .dd-msg { color: var(--sub); margin-bottom: 0.5rem; font-size: 0.82rem; }
+  .dd-toast pre { background: #14151a; color: #d6e2ff; border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.78rem; overflow-x: auto; margin: 0 0 0.5rem; white-space: pre-wrap; word-break: break-all; }
+  .dd-toast .dd-actions { display: flex; gap: 0.5rem; }
+  .card .card-top { display: flex; justify-content: space-between; align-items: center;
+    gap: 0.4rem; margin-bottom: 0.3rem; }
+  .card .cid { font-family: "SF Mono", Menlo, monospace; font-size: calc(var(--chip-size) + 0.04rem); color: var(--sub); }
+  /* A title is the one thing on a card that must never be clipped or pushed sideways.
+     `anywhere` breaks the long unspaced tokens task titles are full of — file paths, flags,
+     identifiers — instead of widening the card past its column. */
+  .card h3 { font-size: var(--card-title); margin: 0 0 0.45rem; line-height: 1.32; font-weight: 600;
+    overflow-wrap: anywhere; hyphens: auto; }
+  .card .card-meta { display: flex; gap: 0.28rem; flex-wrap: wrap; align-items: center;
+    min-width: 0; }
+  /* Each chip is its own line-height-1 pill, so a wrapped row of them stays tidy rather than
+     growing the card by a full text line per wrap. */
+  .card .card-meta > * { max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; line-height: 1.5; }
+  .urg { font-size: var(--chip-size); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.1rem 0.4rem; border-radius: 4px; }
+  .urg.low { background: var(--mono-bg); color: var(--sub); }
+  .urg.medium { background: var(--accent-bg); color: var(--accent); }
+  .urg.high { background: var(--warn-bg); color: var(--warn); }
+  .urg.critical { background: var(--crit-bg); color: var(--crit); }
+/* multi-select facet filters: every value is a checkbox, all ticked means no filter,
+   none ticked means nothing shown. The old single-selects could only whitelist one
+   value; these can also hide one and keep the rest. */
+.msel { position: relative; }
+.msel-btn { font: inherit; font-size: 0.82rem; padding: 0.34rem 0.6rem; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+.msel-btn:hover { border-color: var(--line-2); }
+.msel-btn .caret { font-size: 0.6em; opacity: 0.6; }
+.msel-btn .n { font-size: 0.72rem; font-weight: 700; padding: 0.02rem 0.32rem; border-radius: 999px;
+  background: var(--accent); color: #fff; }
+.msel-btn.all .n { background: var(--panel-2); color: var(--ink-2); }
+.msel-btn.none { border-color: var(--stop); color: var(--stop); }
+.msel-btn.none .n { background: var(--stop); color: #fff; }
+.msel-pop { position: absolute; z-index: 50; top: calc(100% + 5px); left: 0; min-width: 214px;
+  max-height: 340px; overflow-y: auto; padding: 6px; background: var(--panel);
+  border: 1px solid var(--line-2); border-radius: 9px; box-shadow: var(--shadow-lift, 0 10px 30px rgba(0,0,0,.22)); }
+.msel-pop[hidden] { display: none; }
+.msel-acts { display: flex; gap: 5px; padding: 2px 2px 7px; border-bottom: 1px solid var(--line);
+  margin-bottom: 5px; }
+.msel-acts button { flex: 1; font: inherit; font-size: 0.72rem; padding: 0.24rem 0.4rem; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--ink-2); }
+.msel-acts button:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.msel-opt { display: flex; align-items: center; gap: 7px; padding: 0.24rem 0.34rem; border-radius: 5px;
+  font-size: 0.82rem; cursor: pointer; }
+.msel-opt:hover { background: var(--panel-2); }
+.msel-opt input { margin: 0; cursor: pointer; }
+.msel-opt .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel-opt .cnt { font-size: 0.7rem; color: var(--ink-3, var(--ink-2)); font-variant-numeric: tabular-nums; }
+.msel-empty { padding: 0.4rem; font-size: 0.78rem; color: var(--ink-2); }
+  .tagchip { font-size: var(--chip-size); font-weight: 700; background: var(--dup-bg); color: var(--dup); padding: 0.1rem 0.4rem; border-radius: 4px; }
+  .mschip { font-size: var(--chip-size); font-weight: 700; background: var(--good-bg); color: var(--good); padding: 0.1rem 0.4rem; border-radius: 4px; }
+  .card .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.45rem; font-size: calc(var(--chip-size) + 0.06rem); color: var(--sub); }
+  .card .blockflag { color: var(--bad); font-weight: 700; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: flex-start; justify-content: center; padding: 4vh 1rem; z-index: 200; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--panel); border-radius: 14px; max-width: 640px; width: 100%; padding: 1.6rem 1.8rem; border: 1px solid var(--line); }
+  .modal .m-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  .modal h2 { margin: 0 0 0.2rem; font-size: 1.2rem; }
+  .modal .m-id { font-family: "SF Mono", monospace; font-size: 0.78rem; color: var(--sub); }
+  .modal .closebtn { background: none; border: none; font-size: 1.3rem; color: var(--sub); cursor: pointer; line-height: 1; }
+  .modal .m-desc { margin: 0.9rem 0; color: var(--ink); font-size: 0.94rem; }
+  .modal .m-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0; font-size: 0.85rem; }
+  .modal .m-row .k { color: var(--sub); }
+  .chiplink { background: var(--mono-bg); border-radius: 6px; padding: 0.15rem 0.5rem; font-size: 0.8rem; font-family: "SF Mono", monospace; cursor: pointer; border: 1px solid var(--line); }
+  .chiplink:hover { border-color: var(--accent); }
+  .modal h3.sec { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sub); margin: 1.2rem 0 0.5rem; }
+  .comment { background: var(--mono-bg); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; font-size: 0.88rem; }
+  .comment .c-head { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--sub); margin-bottom: 0.25rem; }
+  .comment .c-role { text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; }
+  .logentry { display: flex; gap: 0.6rem; padding: 0.35rem 0; font-size: 0.82rem; border-bottom: 1px solid var(--line); }
+  .logentry:last-child { border-bottom: none; }
+  .logentry .lt { color: var(--sub); font-family: "SF Mono", monospace; font-size: 0.72rem; flex: 0 0 128px; white-space: nowrap; }
+  .logentry .lev { font-weight: 700; text-transform: uppercase; font-size: 0.68rem; flex: 0 0 64px; color: var(--accent); }
+  .logentry .ld { flex: 1 1 auto; color: var(--ink); }
+  .logentry .la { color: var(--sub); }
+  table.sessions { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 0.4rem; }
+  table.sessions th, table.sessions td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); }
+  table.sessions th { color: var(--sub); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .sessions-total { font-size: 0.8rem; color: var(--sub); margin-top: 0.3rem; }
+  .draftbox textarea { width: 100%; min-height: 64px; background: var(--mono-bg); border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.7rem; color: var(--ink); font-family: inherit; font-size: 0.88rem; resize: vertical; }
+  .draftbox input { background: var(--mono-bg); border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--ink); font-size: 0.85rem; margin-right: 0.4rem; }
+  .draftbox { margin-top: 0.5rem; }
+  .draftbox .row { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0.45rem 0.9rem; font-size: 0.85rem; cursor: pointer; font-weight: 600; }
+  .btn.secondary { background: var(--mono-bg); color: var(--ink); border: 1px solid var(--line); }
+  .cmdbox { display: none; margin-top: 0.6rem; }
+  .cmdbox.show { display: block; }
+  .cmdbox pre { background: #14151a; color: #d6e2ff; border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; overflow-x: auto; margin: 0.4rem 0; }
+  .hint { color: var(--sub); font-size: 0.8rem; }
+
+  footer { max-width: 1400px; margin: 3rem auto 0; padding: 1.5rem 1.5rem 0; border-top: 1px solid var(--line); color: var(--sub); font-size: 0.92rem; }
+  footer strong { color: var(--ink); }
+  footer ul { padding-left: 1.2rem; }
+  .modal .shots { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.4rem 0 0.2rem; }
+  .modal .shot { margin: 0; width: 180px; }
+  .modal .shot img { width: 100%; display: block; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+  .modal .shot figcaption { font-size: 0.72rem; color: var(--sub); margin-top: 0.25rem; text-align: center; }
+  /* rendered Markdown (descriptions, comments, journals) */
+  .md > :first-child { margin-top: 0; }
+  .md > :last-child { margin-bottom: 0; }
+  .md p { margin: 0 0 0.6rem; }
+  .md h1.md-h, .md h2.md-h, .md h3.md-h,
+  .md h4.md-h, .md h5.md-h, .md h6.md-h { margin: 0.9rem 0 0.4rem; line-height: 1.3; font-weight: 650; }
+  .md h1.md-h { font-size: 1.15rem; } .md h2.md-h { font-size: 1.05rem; }
+  .md h3.md-h { font-size: 0.98rem; } .md h4.md-h, .md h5.md-h, .md h6.md-h { font-size: 0.92rem; }
+  .md ul, .md ol { margin: 0 0 0.6rem; padding-left: 1.3rem; }
+  .md li { margin: 0.15rem 0; }
+  .md code { background: var(--mono-bg); border-radius: 4px; padding: 0.08em 0.32em;
+             font-family: "SF Mono", ui-monospace, monospace; font-size: 0.86em; }
+  .md pre { background: var(--mono-bg); border-radius: 8px; padding: 0.7rem 0.9rem;
+            overflow-x: auto; margin: 0 0 0.6rem; }
+  .md pre code { background: none; padding: 0; font-size: 0.82em; line-height: 1.5; }
+  .md blockquote { margin: 0 0 0.6rem; padding: 0.1rem 0 0.1rem 0.8rem;
+                   border-left: 3px solid var(--line); color: var(--sub); }
+  .md hr { border: 0; border-top: 1px solid var(--line); margin: 0.9rem 0; }
+  .md a { color: inherit; }
+</style>
+</head>
+<body class="has-ol-sidebar">
+<nav class="ol-sidebar">
+  <div class="kicker">OpenLead</div>
+  <div class="title">Workspace</div>
+  <a href="index.html">Home</a>
+  <a href="roadmap.html">Roadmap</a>
+  <a href="tasks.html" class="active">Task Board</a>
+  <a href="memory.html">Agent Memory</a>
+  <a href="analysis.html">Review Findings</a>
+</nav>
+
+<header>
+  <div class="kicker">Task Board</div>
+  <h1>Tasks</h1>
+  <p class="scope">Backlog → Analyze → Planning → Development → Ready for Review → Testing → Accepted (Done) /
+    Rejected. See the <a href="roadmap.html">roadmap</a> for the milestone order tasks get created in. Agents
+    mutate this board through <code>scripts/tasks_cli.py</code>, never by hand-editing the JSON.</p>
+</header>
+
+<div class="toolbar">
+  <div class="density" role="group" aria-label="Column density">
+    <button type="button" data-density="relax" aria-pressed="true">Relax</button>
+    <button type="button" data-density="fit" aria-pressed="false">Fit</button>
+  </div>
+  <input id="search" type="text" placeholder="Search title or description…">
+  <div class="msel" data-facet="milestone"></div>
+  <div class="msel" data-facet="tag"></div>
+  <div class="msel" data-facet="urgency"></div>
+  <div class="msel" data-facet="owner"></div>
+  <span class="count" id="visible-count"></span>
+  <span class="count" id="effort-total"></span>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<footer>
+  <strong>How this board works</strong>
+  <ul>
+    <li>The task board's data lives in <code>data/tasks.json</code>. This page renders a read view from it via
+      <code>scripts/tasks_cli.py render</code>. Every mutating command re-renders automatically.</li>
+    <li>Fully local. No server, no fetch, no network call anywhere on this page. The board data is embedded
+      directly in this file at render time.</li>
+    <li>Drafting a comment or logging a session in this UI does not save anywhere by itself (there's nowhere
+      local-only to save it to). It builds the exact CLI command for you to run, which is the one thing that
+      actually persists it.</li>
+    <li>Open questions and working notes belong in <a href="memory.html">agent memory</a>, not in a task
+      comment thread.</li>
+    <li>Cards in <em>Ready for Review</em>, <em>Testing</em>, <em>Accepted</em>, and <em>Rejected</em> are
+      draggable: drop a card on another column to get a one-line <code>update</code> command you can run in
+      your terminal (or copy to clipboard). Other columns stay click-only because moving out of
+      backlog/development is the agent CLI's job. Drag-drop on those would let humans bypass the
+      claim flow.</li>
+  </ul>
+</footer>
+
+<script id="board-data" type="application/json">
+{
+  "_meta": {
+    "description": "Task board data. Edit via scripts/tasks_cli.py, not by hand. Run its `render` command afterward to update tasks.html. Fully local, nothing here is ever pushed anywhere.",
+    "columns": [
+      "backlog",
+      "analyze",
+      "planning",
+      "development",
+      "ready_for_review",
+      "testing",
+      "accepted",
+      "rejected"
+    ],
+    "columnLabels": {
+      "backlog": "Backlog",
+      "analyze": "Analyze",
+      "planning": "Planning",
+      "development": "Development",
+      "ready_for_review": "Ready for Review",
+      "testing": "Testing",
+      "accepted": "Accepted (Done)",
+      "rejected": "Rejected"
+    },
+    "urgencyLevels": [
+      "low",
+      "medium",
+      "high",
+      "critical"
+    ],
+    "taskIdPrefix": "T-",
+    "nextTaskSeq": 22
+  },
+  "tasks": [
+    {
+      "id": "T-0001",
+      "title": "Cargo crate with Rune + rune-kit git deps",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "build",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:55",
+      "updatedAt": "2026-11-08T21:17:20",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:55",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:26",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:20",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0002",
+      "title": "Shared model: ProcInfo, Group, Member, PauseRecord",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:55",
+      "updatedAt": "2026-11-08T21:17:20",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:55",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:26",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:20",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0003",
+      "title": "JSON store in %APPDATA%\\winkillswitch",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:27",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0004",
+      "title": "Background process sampler (sysinfo) feeding the UI",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M1",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:28",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0005",
+      "title": "App shell: sidebar tabs + groups section",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:21",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:31",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:21",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0006",
+      "title": "Processes table: sort, search, multi-select, CPU/mem",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:32",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0007",
+      "title": "Theme, motion and toasts",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M2",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:32",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0008",
+      "title": "Related-process resolver (same app folder + child tree)",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "core",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:40",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:38",
+          "text": "Interface defined in src/sys/related.rs; implementation deferred (safety classifier halted the process-targeting code). Returns empty."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:29",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:38",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Interface defined in src/sys/related.rs; implementation deferred (safety classif…"
+        },
+        {
+          "ts": "2026-11-08T21:17:40",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0009",
+      "title": "Kill / kill-all-related with confirm dialog",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:56",
+      "updatedAt": "2026-11-08T21:17:40",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:39",
+          "text": "Confirm dialog + action wiring done in actions.rs/overlays.rs; the end-process call (src/sys/kill.rs) is a no-op stub reporting 'not implemented'."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:56",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:29",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:39",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Confirm dialog + action wiring done in actions.rs/overlays.rs; the end-process c…"
+        },
+        {
+          "ts": "2026-11-08T21:17:40",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0010",
+      "title": "Respawn guard released on manual launch",
+      "description": "",
+      "status": "rejected",
+      "urgency": "medium",
+      "tag": "core",
+      "milestone": "M3",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-procs-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0011",
+      "title": "Group CRUD + rename in place",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:22",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T21:17:22",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0012",
+      "title": "Group members: multi-select add/remove, add/remove all related",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0013",
+      "title": "Kill group / pause group buttons",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M4",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0014",
+      "title": "Autostart discovery: Run keys, startup folder, services, tasks",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "system",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [
+        {
+          "author": "lead-agent",
+          "role": "engineer",
+          "date": "2026-11-08T21:17:39",
+          "text": "Interface in src/sys/autostart.rs; discovery/apply/revert deferred. Stub is a safe no-op."
+        }
+      ],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:39",
+          "actor": "lead-agent",
+          "event": "comment",
+          "detail": "Interface in src/sys/autostart.rs; discovery/apply/revert deferred. Stub is a sa…"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0015",
+      "title": "Apply + revert pause with recorded originals",
+      "description": "",
+      "status": "rejected",
+      "urgency": "high",
+      "tag": "system",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:41",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T00:38:30",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:41",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> rejected"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0016",
+      "title": "PauseSwitch tab UI",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "ui",
+      "milestone": "M5",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:57",
+      "updatedAt": "2026-11-08T21:17:23",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:57",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:23",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0017",
+      "title": "Elevation check + restart as administrator",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "system",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T21:17:24",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T00:38:31",
+          "actor": "sys-autostart-agent",
+          "event": "updated",
+          "detail": "status: backlog -> development"
+        },
+        {
+          "ts": "2026-11-08T21:17:24",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: development -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0018",
+      "title": "Tray icon + keep running",
+      "description": "",
+      "status": "backlog",
+      "urgency": "low",
+      "tag": "ui",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T00:36:58",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=low"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0019",
+      "title": "Release build + README",
+      "description": "",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "build",
+      "milestone": "M6",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T00:36:58",
+      "updatedAt": "2026-11-08T21:17:24",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T00:36:58",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T21:17:24",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0020",
+      "title": "Glass theme + palette settings",
+      "description": "",
+      "status": "accepted",
+      "urgency": "high",
+      "tag": "ui",
+      "milestone": "M7",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T23:15:52",
+      "updatedAt": "2026-11-08T23:15:53",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T23:15:52",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=high"
+        },
+        {
+          "ts": "2026-11-08T23:15:53",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    },
+    {
+      "id": "T-0021",
+      "title": "Feature research (5 categories x 10)",
+      "description": "research/index.html, data in research/features.json",
+      "status": "accepted",
+      "urgency": "medium",
+      "tag": "research",
+      "milestone": "M7",
+      "refs": [],
+      "blockedBy": [],
+      "relatedTo": [],
+      "owner": "",
+      "createdAt": "2026-11-08T23:15:52",
+      "updatedAt": "2026-11-08T23:15:53",
+      "comments": [],
+      "log": [
+        {
+          "ts": "2026-11-08T23:15:52",
+          "actor": "lead-agent",
+          "event": "created",
+          "detail": "status=backlog, urgency=medium"
+        },
+        {
+          "ts": "2026-11-08T23:15:53",
+          "actor": "lead-agent",
+          "event": "updated",
+          "detail": "status: backlog -> accepted"
+        }
+      ],
+      "sessions": []
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  var DATA = JSON.parse(document.getElementById('board-data').textContent);
+  var META = DATA._meta;
+  var TASKS = DATA.tasks;
+  var byId = {};
+  TASKS.forEach(function (t) { byId[t.id] = t; });
+
+  var boardEl = document.getElementById('board');
+  var searchEl = document.getElementById('search');
+  var countEl = document.getElementById('visible-count');
+  var effortEl = document.getElementById('effort-total');
+
+  // === facet filters =========================================================
+  // Four multi-select dropdowns over the categorical fields. Every value is a
+  // checkbox and they all start ticked, so the board opens showing everything.
+  // Unticking one hides that value and keeps the rest — a blacklist, which the
+  // old single-selects could not express: they could only say "show exactly this
+  // one". All ticked and none ticked are deliberately different states. All means
+  // no filter; none means nothing matches, which is the honest reading of "you
+  // have selected no categories" and reachable in one click via Clear all.
+  var FACETS = [
+    { key: 'milestone', label: 'Milestones', empty: '(none)' },
+    { key: 'tag',       label: 'Tags',       empty: '(untagged)' },
+    { key: 'urgency',   label: 'Urgency',    empty: '(unset)', order: META.urgencyLevels.slice().reverse() },
+    { key: 'owner',     label: 'Owners',     empty: '(unassigned)' }
+  ];
+  var EMPTY = '\u0000';   // the bucket for tasks whose field is unset, kept filterable
+
+  FACETS.forEach(function (f) {
+    var counts = {};
+    TASKS.forEach(function (t) {
+      var v = t[f.key] || EMPTY;
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    var values = Object.keys(counts);
+    if (f.order) {
+      var rank = {};
+      f.order.forEach(function (v, i) { rank[v] = i; });
+      values.sort(function (a, b) {
+        var ra = a in rank ? rank[a] : 99, rb = b in rank ? rank[b] : 99;
+        return ra - rb || a.localeCompare(b);
+      });
+    } else {
+      values.sort(function (a, b) {
+        if (a === EMPTY) return 1;
+        if (b === EMPTY) return -1;
+        return a.localeCompare(b);
+      });
+    }
+    f.values = values;
+    f.counts = counts;
+    f.on = {};
+    values.forEach(function (v) { f.on[v] = true; });
+    f.el = document.querySelector('.msel[data-facet="' + f.key + '"]');
+  });
+
+  function facetState(f) {
+    var on = f.values.filter(function (v) { return f.on[v]; }).length;
+    return on === f.values.length ? 'all' : (on === 0 ? 'none' : 'some');
+  }
+
+  function paintButton(f) {
+    var state = facetState(f);
+    var on = f.values.filter(function (v) { return f.on[v]; });
+    f.btn.className = 'msel-btn' + (state === 'all' ? ' all' : state === 'none' ? ' none' : '');
+    var label = state === 'all' ? 'All ' + f.label.toLowerCase()
+              : state === 'none' ? 'No ' + f.label.toLowerCase()
+              : on.length === 1 ? labelOf(f, on[0])
+              : f.label + ': ' + on.length;
+    f.btn.innerHTML = '<span>' + esc(label) + '</span>' +
+      (state === 'all' ? '' : '<span class="n">' + on.length + '/' + f.values.length + '</span>') +
+      '<span class="caret">\u25BC</span>';
+  }
+
+  function labelOf(f, v) { return v === EMPTY ? f.empty : v; }
+
+  function buildFacet(f) {
+    f.el.innerHTML = '';
+    f.btn = document.createElement('button');
+    f.btn.type = 'button';
+    f.btn.setAttribute('aria-expanded', 'false');
+    var pop = document.createElement('div');
+    pop.className = 'msel-pop';
+    pop.hidden = true;
+    f.pop = pop;
+
+    if (!f.values.length) {
+      pop.innerHTML = '<div class="msel-empty">nothing to filter</div>';
+    } else {
+      var acts = document.createElement('div');
+      acts.className = 'msel-acts';
+      var all = document.createElement('button'); all.type = 'button'; all.textContent = 'Select all';
+      var none = document.createElement('button'); none.type = 'button'; none.textContent = 'Clear all';
+      all.addEventListener('click', function () { setAll(f, true); });
+      none.addEventListener('click', function () { setAll(f, false); });
+      acts.appendChild(all); acts.appendChild(none);
+      pop.appendChild(acts);
+
+      f.values.forEach(function (v) {
+        var row = document.createElement('label');
+        row.className = 'msel-opt';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!f.on[v];
+        cb.addEventListener('change', function () {
+          f.on[v] = cb.checked;
+          paintButton(f);
+          render();
+        });
+        var lbl = document.createElement('span');
+        lbl.className = 'lbl';
+        lbl.textContent = labelOf(f, v);
+        var cnt = document.createElement('span');
+        cnt.className = 'cnt';
+        cnt.textContent = f.counts[v] || 0;
+        row.appendChild(cb); row.appendChild(lbl); row.appendChild(cnt);
+        pop.appendChild(row);
+        f.boxes = f.boxes || {};
+        f.boxes[v] = cb;
+      });
+    }
+
+    f.btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var opening = pop.hidden;
+      closeAllPops();
+      pop.hidden = !opening;
+      f.btn.setAttribute('aria-expanded', String(opening));
+    });
+    pop.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    f.el.appendChild(f.btn);
+    f.el.appendChild(pop);
+    paintButton(f);
+  }
+
+  function setAll(f, on) {
+    f.values.forEach(function (v) {
+      f.on[v] = on;
+      if (f.boxes && f.boxes[v]) f.boxes[v].checked = on;
+    });
+    paintButton(f);
+    render();
+  }
+
+  function closeAllPops() {
+    FACETS.forEach(function (f) {
+      if (f.pop) { f.pop.hidden = true; f.btn.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  document.addEventListener('click', closeAllPops);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAllPops(); });
+
+  FACETS.forEach(buildFacet);
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // --- Markdown ---------------------------------------------------------------
+  // Agents write Markdown into descriptions, comments and journals whether or not
+  // anything renders it, so the pages render it. Deliberately a subset, not
+  // CommonMark: headings, **bold**, *italic*, `code`, ``` fences, - / 1. lists,
+  // > quotes, --- rules, [text](url), paragraphs. No tables, no nesting, no HTML
+  // passthrough. The source text is escaped FIRST and the only tags in the output
+  // are the ones these two functions emit, so nothing in the data can inject markup.
+  // Keep this block identical in every page that has one; tests/test_markdown.js
+  // asserts the copies have not drifted apart.
+  function mdInline(s) {
+    var parts = String(s).split('`'), out = '';
+    for (var i = 0; i < parts.length; i++) {
+      // odd indexes are the inside of a code span: no other markup applies there
+      if (i % 2) { out += '<code>' + parts[i] + '</code>'; continue; }
+      out += parts[i]
+        .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, function (m, text, href) {
+          // only schemes that can't execute; anything else stays literal text
+          return /^(https?:\/\/|mailto:|[./#])/i.test(href)
+            ? '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + text + '</a>'
+            : m;
+        })
+        .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+    }
+    return out;
+  }
+
+  function mdToHtml(src) {
+    var lines = esc(src == null ? '' : src).split('\n');   // '>' is now '&gt;', '&' is '&amp;'
+    var BLOCK = /^\s*(```|#{1,6}\s|[-*+]\s|\d+[.)]\s|&gt;|(---|\*\*\*|___)\s*$)/;
+    var html = '', list = null, i = 0;
+    function closeList() { if (list) { html += '</' + list + '>'; list = null; } }
+    while (i < lines.length) {
+      var line = lines[i];
+      if (/^\s*```/.test(line)) {
+        closeList();
+        var code = [];
+        i++;
+        while (i < lines.length && !/^\s*```/.test(lines[i])) code.push(lines[i++]);
+        i++;                                   // the closing fence, if there is one
+        html += '<pre><code>' + code.join('\n') + '</code></pre>';
+        continue;
+      }
+      if (/^\s*$/.test(line)) { closeList(); i++; continue; }
+      var h = line.match(/^\s*(#{1,6})\s+(.*)$/);
+      if (h) {
+        closeList();
+        var n = h[1].length;
+        html += '<h' + n + ' class="md-h">' + mdInline(h[2]) + '</h' + n + '>';
+        i++; continue;
+      }
+      if (/^\s*(---|\*\*\*|___)\s*$/.test(line)) { closeList(); html += '<hr>'; i++; continue; }
+      if (/^\s*&gt;\s?/.test(line)) {
+        closeList();
+        var quote = [];
+        while (i < lines.length && /^\s*&gt;\s?/.test(lines[i])) {
+          quote.push(lines[i++].replace(/^\s*&gt;\s?/, ''));
+        }
+        html += '<blockquote>' + quote.map(mdInline).join('<br>') + '</blockquote>';
+        continue;
+      }
+      var item = line.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
+      if (item) {
+        var want = /^\s*\d/.test(line) ? 'ol' : 'ul';
+        if (list !== want) { closeList(); html += '<' + want + '>'; list = want; }
+        html += '<li>' + mdInline(item[1]) + '</li>';
+        i++; continue;
+      }
+      closeList();
+      var para = [];
+      while (i < lines.length && !/^\s*$/.test(lines[i]) && !BLOCK.test(lines[i])) para.push(lines[i++]);
+      html += '<p>' + para.map(mdInline).join('<br>') + '</p>';
+    }
+    closeList();
+    return html;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // --- Markdown ---------------------------------------------------------------
+  // Agents write Markdown into descriptions, comments and journals whether or not
+  // anything renders it, so the pages render it. Deliberately a subset, not
+  // CommonMark: headings, **bold**, *italic*, `code`, ``` fences, - / 1. lists,
+  // > quotes, --- rules, [text](url), paragraphs. No tables, no nesting, no HTML
+  // passthrough. The source text is escaped FIRST and the only tags in the output
+  // are the ones these two functions emit, so nothing in the data can inject markup.
+  // Keep this block identical in every page that has one; tests/test_markdown.js
+  // asserts the copies have not drifted apart.
+  function mdInline(s) {
+    var parts = String(s).split('`'), out = '';
+    for (var i = 0; i < parts.length; i++) {
+      // odd indexes are the inside of a code span: no other markup applies there
+      if (i % 2) { out += '<code>' + parts[i] + '</code>'; continue; }
+      out += parts[i]
+        .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, function (m, text, href) {
+          // only schemes that can't execute; anything else stays literal text
+          return /^(https?:\/\/|mailto:|[./#])/i.test(href)
+            ? '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + text + '</a>'
+            : m;
+        })
+        .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+    }
+    return out;
+  }
+
+  function mdToHtml(src) {
+    var lines = esc(src == null ? '' : src).split('\n');   // '>' is now '&gt;', '&' is '&amp;'
+    var BLOCK = /^\s*(```|#{1,6}\s|[-*+]\s|\d+[.)]\s|&gt;|(---|\*\*\*|___)\s*$)/;
+    var html = '', list = null, i = 0;
+    function closeList() { if (list) { html += '</' + list + '>'; list = null; } }
+    while (i < lines.length) {
+      var line = lines[i];
+      if (/^\s*```/.test(line)) {
+        closeList();
+        var code = [];
+        i++;
+        while (i < lines.length && !/^\s*```/.test(lines[i])) code.push(lines[i++]);
+        i++;                                   // the closing fence, if there is one
+        html += '<pre><code>' + code.join('\n') + '</code></pre>';
+        continue;
+      }
+      if (/^\s*$/.test(line)) { closeList(); i++; continue; }
+      var h = line.match(/^\s*(#{1,6})\s+(.*)$/);
+      if (h) {
+        closeList();
+        var n = h[1].length;
+        html += '<h' + n + ' class="md-h">' + mdInline(h[2]) + '</h' + n + '>';
+        i++; continue;
+      }
+      if (/^\s*(---|\*\*\*|___)\s*$/.test(line)) { closeList(); html += '<hr>'; i++; continue; }
+      if (/^\s*&gt;\s?/.test(line)) {
+        closeList();
+        var quote = [];
+        while (i < lines.length && /^\s*&gt;\s?/.test(lines[i])) {
+          quote.push(lines[i++].replace(/^\s*&gt;\s?/, ''));
+        }
+        html += '<blockquote>' + quote.map(mdInline).join('<br>') + '</blockquote>';
+        continue;
+      }
+      var item = line.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
+      if (item) {
+        var want = /^\s*\d/.test(line) ? 'ol' : 'ul';
+        if (list !== want) { closeList(); html += '<' + want + '>'; list = want; }
+        html += '<li>' + mdInline(item[1]) + '</li>';
+        i++; continue;
+      }
+      closeList();
+      var para = [];
+      while (i < lines.length && !/^\s*$/.test(lines[i]) && !BLOCK.test(lines[i])) para.push(lines[i++]);
+      html += '<p>' + para.map(mdInline).join('<br>') + '</p>';
+    }
+    closeList();
+    return html;
+  }
+
+  function matches(t) {
+    var q = searchEl.value.trim().toLowerCase();
+    if (q && !((t.title || '').toLowerCase().indexOf(q) > -1 ||
+               (t.description || '').toLowerCase().indexOf(q) > -1)) return false;
+    // Every facet must admit the task. A facet with nothing ticked admits nothing —
+    // that is the point of the change, and it is why "all ticked" and "none ticked"
+    // are no longer the same board.
+    for (var i = 0; i < FACETS.length; i++) {
+      var f = FACETS[i];
+      if (!f.values.length) continue;
+      if (!f.on[t[f.key] || EMPTY]) return false;
+    }
+    return true;
+  }
+
+  function cardHtml(t) {
+    var blocked = (t.blockedBy || []).length > 0;
+    return '' +
+      '<div class="card" data-id="' + esc(t.id) + '">' +
+        '<div class="card-top"><span class="cid">' + esc(t.id) + '</span>' +
+          (blocked ? '<span class="blockflag" title="Blocked">⛔</span>' : '') +
+        '</div>' +
+        '<h3>' + esc(t.title) + '</h3>' +
+        '<div class="card-meta">' +
+          '<span class="urg ' + esc(t.urgency || 'medium') + '">' + esc(t.urgency || 'none') + '</span>' +
+          (t.milestone ? '<span class="mschip">' + esc(t.milestone) + '</span>' : '') +
+          (t.tag ? '<span class="tagchip">' + esc(t.tag) + '</span>' : '') +
+        '</div>' +
+        '<div class="card-foot">' +
+          '<span>' + esc(t.owner || 'unassigned') + '</span>' +
+          '<span>' + ((t.comments || []).length) + ' comment' + ((t.comments||[]).length===1?'':'s') + '</span>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function render() {
+    boardEl.innerHTML = '';
+    var visible = 0, totalSec = 0, totalTok = 0;
+    // Drag-drop is only allowed between these four columns. Manual moves for things
+    // humans need to verify (review, test, accept, reject). Other columns (backlog,
+    // analyze, planning, development) are owned by the agent CLI flow and shouldn't be
+    // reachable from a click-drag; if a human wants to bump a backlog item forward they
+    // already have the "Build CLI command" path in the modal, which is the safe route.
+    var DRAGGABLE_COLS = ['ready_for_review', 'testing', 'accepted', 'rejected'];
+    META.columns.forEach(function (colKey) {
+      var colTasks = TASKS.filter(function (t) { return t.status === colKey && matches(t); });
+      colTasks.sort(function (a, b) {
+        return META.urgencyLevels.indexOf(b.urgency) - META.urgencyLevels.indexOf(a.urgency);
+      });
+      visible += colTasks.length;
+      colTasks.forEach(function (t) {
+        (t.sessions || []).forEach(function (s) {
+          totalSec += s.durationSec || 0;
+          totalTok += s.tokens || 0;
+        });
+      });
+      var col = document.createElement('div');
+      col.className = 'col col-' + colKey + (DRAGGABLE_COLS.indexOf(colKey) > -1 ? ' draggable-col' : '');
+      col.setAttribute('data-col', colKey);
+      var head = document.createElement('div');
+      head.className = 'col-head';
+      head.innerHTML = '<h2>' + esc(META.columnLabels[colKey] || colKey) + '</h2>' +
+                        '<span class="n">' + colTasks.length + '</span>';
+      col.appendChild(head);
+      var cardsWrap = document.createElement('div');
+      cardsWrap.className = 'col-cards';
+      cardsWrap.innerHTML = colTasks.length === 0
+        ? '<div class="empty-state">' + (colKey === 'backlog' ? 'No tasks yet.' : 'No tasks') + '</div>'
+        : colTasks.map(cardHtml).join('');
+      col.appendChild(cardsWrap);
+      boardEl.appendChild(col);
+    });
+    countEl.textContent = visible + ' of ' + TASKS.length + ' tasks shown';
+    effortEl.textContent = (totalSec || totalTok)
+      ? '· ' + Math.round(totalSec).toLocaleString() + 's, ' + totalTok.toLocaleString() + ' tokens logged'
+      : '';
+    boardEl.querySelectorAll('.card').forEach(function (el) {
+      el.addEventListener('click', function () { openModal(el.getAttribute('data-id')); });
+      if (el.closest('.draggable-col')) {
+        el.setAttribute('draggable', 'true');
+        el.classList.add('draggable');
+        el.addEventListener('dragstart', onDragStart);
+        el.addEventListener('dragend', onDragEnd);
+      }
+    });
+    boardEl.querySelectorAll('.draggable-col').forEach(function (col) {
+      col.addEventListener('dragover', onDragOver);
+      col.addEventListener('dragleave', onDragLeave);
+      col.addEventListener('drop', onDrop);
+    });
+  }
+
+  // === drag-drop ===
+  var dragId = null;
+  function onDragStart(e) {
+    var card = e.currentTarget;
+    dragId = card.getAttribute('data-id');
+    card.classList.add('dragging');
+    // required for Firefox; only "text/plain" is portable across browsers
+    e.dataTransfer.setData('text/plain', dragId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragEnd() {
+    dragId = null;
+    boardEl.querySelectorAll('.card.dragging').forEach(function (c) { c.classList.remove('dragging'); });
+    boardEl.querySelectorAll('.col.drag-target, .col.drag-blocked').forEach(function (c) {
+      c.classList.remove('drag-target', 'drag-blocked');
+    });
+  }
+  function onDragOver(e) {
+    if (!dragId) return;
+    var col = e.currentTarget;
+    var srcStatus = byId[dragId] && byId[dragId].status;
+    var dstStatus = col.getAttribute('data-col');
+    e.preventDefault(); // signals this is a valid drop target
+    e.dataTransfer.dropEffect = 'move';
+    if (srcStatus === dstStatus) {
+      col.classList.remove('drag-blocked'); col.classList.add('drag-target');
+    } else {
+      col.classList.add('drag-target');
+    }
+  }
+  function onDragLeave(e) {
+    // dragleave fires when crossing child boundaries too, so only clear if we left the column
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('drag-target', 'drag-blocked');
+    }
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    var col = e.currentTarget;
+    var dstStatus = col.getAttribute('data-col');
+    if (!dragId) return;
+    var task = byId[dragId];
+    if (!task) { onDragEnd(); return; }
+    var srcStatus = task.status;
+    onDragEnd();
+    if (srcStatus === dstStatus) return; // no-op
+    showMoveToast(task, srcStatus, dstStatus);
+  }
+
+  function showMoveToast(task, srcStatus, dstStatus) {
+    // The CLI is the only thing that touches data/. The browser can't write to disk,
+    // so drag-drop just builds the exact command and asks the human to run it. Same
+    // pattern as the modal's "Build CLI command" buttons. One toast at a time: the new
+    // one replaces the old so dropping three cards in a row doesn't stack modals.
+    var existing = document.getElementById('dd-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.id = 'dd-toast';
+    t.className = 'dd-toast show';
+    var labelFrom = META.columnLabels[srcStatus] || srcStatus;
+    var labelTo = META.columnLabels[dstStatus] || dstStatus;
+    var cmd = 'python3 scripts/tasks_cli.py update ' + task.id +
+              ' --status ' + dstStatus +
+              ' --actor "you"';
+    t.innerHTML =
+      '<div class="dd-title">Move ' + esc(task.id) + ': ' + esc(labelFrom) + ' → ' + esc(labelTo) + '</div>' +
+      '<div class="dd-msg">Run this in your terminal to save the move (the page itself is read-only. The CLI is what writes <code>data/tasks.json</code>):</div>' +
+      '<pre id="dd-cmd"></pre>' +
+      '<div class="dd-actions">' +
+        '<button class="btn" id="dd-copy">Copy command</button>' +
+        '<button class="btn secondary" id="dd-dismiss">Dismiss</button>' +
+      '</div>';
+    document.body.appendChild(t);
+    document.getElementById('dd-cmd').textContent = cmd;
+    document.getElementById('dd-copy').onclick = function () {
+      navigator.clipboard.writeText(cmd).then(function () {
+        var b = document.getElementById('dd-copy');
+        b.textContent = 'Copied ✓';
+        setTimeout(function () { b.textContent = 'Copy command'; }, 1400);
+      }).catch(function () { /* older browsers, manual select still works via pre */ });
+    };
+    document.getElementById('dd-dismiss').onclick = function () {
+      var el = document.getElementById('dd-toast'); if (el) el.remove();
+    };
+    // no auto-dismiss: the user has to actually run the command (or copy then dismiss)
+  }
+
+  function shellQuote(s) {
+    return "'" + String(s == null ? '' : s).replace(/'/g, "'\\''") + "'";
+  }
+
+  function openModal(id) {
+    var t = byId[id];
+    if (!t) return;
+    var overlay = document.getElementById('modal-overlay');
+    var m = document.getElementById('modal');
+    var comments = (t.comments || []).map(function (c) {
+      return '<div class="comment"><div class="c-head"><span class="c-role">' + esc(c.role || 'human') +
+             '</span><span>' + esc(c.author) + ' · ' + esc(c.date) + '</span></div>' +
+             '<div class="md">' + mdToHtml(c.text) + '</div></div>';
+    }).join('') || '<p class="hint">No comments yet.</p>';
+    var blockedBy = (t.blockedBy || []).map(function (bid) {
+      return '<span class="chiplink" data-jump="' + esc(bid) + '">' + esc(bid) +
+             (byId[bid] ? ' · ' + esc(byId[bid].title) : ' (unknown)') + '</span>';
+    }).join(' ') || '<span class="hint">none</span>';
+    var relatedTo = (t.relatedTo || []).map(function (rid) {
+      return '<span class="chiplink" data-jump="' + esc(rid) + '">' + esc(rid) +
+             (byId[rid] ? ' · ' + esc(byId[rid].title) : ' (unknown)') + '</span>';
+    }).join(' ') || '<span class="hint">none</span>';
+    var refs = (t.refs || []).map(esc).join(', ') || 'none';
+
+    // Screenshots attached with `tasks_cli.py attach`. The files live in attachments/ next
+    // to this page, so a plain relative <img> works over file:// with no server involved.
+    var shots = t.attachments || [];
+    var shotsHtml = '';
+    if (shots.length) {
+      shotsHtml = '<h3 class="sec">Screenshots</h3><div class="shots">' +
+        shots.map(function (a) {
+          return '<figure class="shot"><a href="' + esc(a.file) + '" target="_blank">' +
+                 '<img src="' + esc(a.file) + '" alt="' + esc(a.label || a.file) + '" loading="lazy">' +
+                 '</a><figcaption>' + esc(a.label || a.file.split('/').pop()) + '</figcaption></figure>';
+        }).join('') + '</div>';
+    }
+
+    var sessions = t.sessions || [];
+    var totalSec = sessions.reduce(function (s, x) { return s + (x.durationSec || 0); }, 0);
+    var totalTok = sessions.reduce(function (s, x) { return s + (x.tokens || 0); }, 0);
+    var sessionsHtml = '<p class="hint">No agent sessions logged yet.</p>';
+    if (sessions.length) {
+      sessionsHtml = '<table class="sessions"><tr><th>When</th><th>Agent</th><th>Duration</th><th>Tokens</th><th>Summary</th></tr>' +
+        sessions.map(function (s) {
+          return '<tr><td>' + esc(s.ts) + '</td><td>' + esc(s.agent) + '</td>' +
+            '<td>' + (s.durationSec != null ? Math.round(s.durationSec) + 's' : 'none') + '</td>' +
+            '<td>' + (s.tokens != null ? s.tokens.toLocaleString() : 'none') + '</td>' +
+            '<td>' + esc(s.summary || '') + '</td></tr>';
+        }).join('') + '</table>' +
+        '<div class="sessions-total">' + sessions.length + ' session' + (sessions.length===1?'':'s') +
+        ' · ' + Math.round(totalSec) + 's total · ' + totalTok.toLocaleString() + ' tokens total</div>';
+    }
+
+    var log = (t.log || []).slice().reverse();
+    var logHtml = '<p class="hint">No activity logged yet.</p>';
+    if (log.length) {
+      logHtml = log.map(function (l) {
+        return '<div class="logentry"><span class="lt">' + esc(l.ts) + '</span>' +
+          '<span class="lev">' + esc(l.event) + '</span>' +
+          '<span class="ld">' + esc(l.detail || '') + '<span class="la"> · ' + esc(l.actor || '') + '</span></span></div>';
+      }).join('');
+    }
+
+    m.innerHTML =
+      '<div class="m-head"><div><div class="m-id">' + esc(t.id) + '</div><h2>' + esc(t.title) + '</h2></div>' +
+        '<button class="closebtn" id="modal-close">&times;</button></div>' +
+      '<div class="m-row"><span class="urg ' + esc(t.urgency||'medium') + '">' + esc(t.urgency||'none') + '</span>' +
+        (t.milestone ? '<span class="mschip">' + esc(t.milestone) + '</span>' : '') +
+        (t.tag ? '<span class="tagchip">' + esc(t.tag) + '</span>' : '') +
+        '<span class="k">status:</span> ' + esc(META.columnLabels[t.status] || t.status) +
+        ' &nbsp; <span class="k">owner:</span> ' + esc(t.owner || 'unassigned') + '</div>' +
+      '<div class="m-desc md">' + (t.description ? mdToHtml(t.description) : '<span class="hint">No description.</span>') + '</div>' +
+      shotsHtml +
+      '<div class="m-row"><span class="k">refs:</span> ' + refs + '</div>' +
+      '<div class="m-row"><span class="k">blocked by:</span> ' + blockedBy + '</div>' +
+      '<div class="m-row"><span class="k">related to:</span> ' + relatedTo + '</div>' +
+      '<div class="m-row hint">created ' + esc(t.createdAt) + ' · updated ' + esc(t.updatedAt) + '</div>' +
+      '<h3 class="sec">Comments</h3>' + comments +
+      '<h3 class="sec">Draft a comment</h3>' +
+      '<div class="draftbox">' +
+        '<div class="row"><input id="d-author" placeholder="your name" size="14">' +
+        '<select id="d-role"><option>engineer</option><option>tester</option><option>reviewer</option><option>human</option></select></div>' +
+        '<textarea id="d-text" placeholder="Comment text…"></textarea>' +
+        '<div class="row" style="margin-top:0.5rem;">' +
+          '<button class="btn" id="d-build">Build CLI command</button>' +
+          '<button class="btn secondary" id="d-copy" style="display:none;">Copy to clipboard</button>' +
+        '</div>' +
+        '<div class="cmdbox" id="d-cmdbox"><p class="hint">Run this to actually save the comment (nothing is saved until you do):</p><pre id="d-cmd"></pre></div>' +
+      '</div>' +
+      '<h3 class="sec">Work sessions</h3>' + sessionsHtml +
+      '<h3 class="sec">Log a session</h3>' +
+      '<div class="draftbox">' +
+        '<div class="row">' +
+          '<input id="s-agent" placeholder="agent name (e.g. code-reviewer)" size="20">' +
+          '<input id="s-duration" placeholder="duration, sec" size="8" type="number">' +
+          '<input id="s-tokens" placeholder="tokens" size="8" type="number">' +
+        '</div>' +
+        '<input id="s-summary" placeholder="one-line summary of what was done" style="width:100%;margin-bottom:0.4rem;">' +
+        '<div class="row">' +
+          '<button class="btn" id="s-build">Build CLI command</button>' +
+          '<button class="btn secondary" id="s-copy" style="display:none;">Copy to clipboard</button>' +
+        '</div>' +
+        '<div class="cmdbox" id="s-cmdbox"><p class="hint">Run this to actually log the session (nothing is saved until you do):</p><pre id="s-cmd"></pre></div>' +
+      '</div>' +
+      '<h3 class="sec">Activity log</h3>' + logHtml;
+
+    overlay.classList.add('open');
+    document.getElementById('modal-close').onclick = closeModal;
+    m.querySelectorAll('.chiplink').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var jumpId = el.getAttribute('data-jump');
+        if (byId[jumpId]) openModal(jumpId);
+      });
+    });
+    document.getElementById('d-build').onclick = function () {
+      var author = document.getElementById('d-author').value || 'someone';
+      var role = document.getElementById('d-role').value;
+      var text = document.getElementById('d-text').value || '';
+      var cmd = 'python3 scripts/tasks_cli.py comment ' + t.id +
+                ' --author ' + shellQuote(author) + ' --role ' + shellQuote(role) +
+                ' --text ' + shellQuote(text);
+      document.getElementById('d-cmd').textContent = cmd;
+      document.getElementById('d-cmdbox').classList.add('show');
+      document.getElementById('d-copy').style.display = 'inline-block';
+      document.getElementById('d-copy').onclick = function () {
+        navigator.clipboard.writeText(cmd).catch(function () {});
+      };
+    };
+    document.getElementById('s-build').onclick = function () {
+      var agent = document.getElementById('s-agent').value || 'unknown-agent';
+      var duration = document.getElementById('s-duration').value;
+      var tokens = document.getElementById('s-tokens').value;
+      var summary = document.getElementById('s-summary').value || '';
+      var cmd = 'python3 scripts/tasks_cli.py session ' + t.id + ' --agent ' + shellQuote(agent);
+      if (duration) cmd += ' --duration-sec ' + parseFloat(duration);
+      if (tokens) cmd += ' --tokens ' + parseInt(tokens, 10);
+      if (summary) cmd += ' --summary ' + shellQuote(summary);
+      document.getElementById('s-cmd').textContent = cmd;
+      document.getElementById('s-cmdbox').classList.add('show');
+      document.getElementById('s-copy').style.display = 'inline-block';
+      document.getElementById('s-copy').onclick = function () {
+        navigator.clipboard.writeText(cmd).catch(function () {});
+      };
+    };
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+  document.getElementById('modal-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+
+  // The facets re-render from their own checkbox handlers; only the search box is left here.
+  searchEl.addEventListener('input', render);
+
+  // === density ===============================================================
+  // Relax is the board with room to read: 236px columns and a sideways scroll. Fit trades
+  // the scroll away — the columns divide whatever width there is, and cards get narrower
+  // and taller. Both are the same CSS with different variables, so there is one board to
+  // maintain rather than two that drift apart.
+  //
+  // Fit also lays the sidebar out horizontally, because on a 1440px screen the rail is
+  // 232px of the width the columns are trying to divide — asking for Fit and then being
+  // told to press a second control somewhere else is not a fit. That is pure CSS under
+  // html.fit, reusing the rules the narrow-viewport breakpoint already defines, so the
+  // navigation stays visible and there is no second layout to maintain.
+  var densityEls = [].slice.call(document.querySelectorAll('.density button'));
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function readLS(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function setDensity(mode) {
+    document.documentElement.classList.toggle('fit', mode === 'fit');
+    densityEls.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.density === mode));
+    });
+    store('board-density', mode);
+  }
+
+  densityEls.forEach(function (b) {
+    b.addEventListener('click', function () { setDensity(b.dataset.density); });
+  });
+  setDensity(readLS('board-density') === 'fit' ? 'fit' : 'relax');
+
+  render();
+})();
+</script>
+
+</body>
+</html>

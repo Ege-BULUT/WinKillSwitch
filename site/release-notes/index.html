@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WinKillSwitch Release Notes</title>
+<meta name="description" content="What changed in each WinKillSwitch release, with downloads and checksums.">
+<meta name="theme-color" content="#0b0614">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c5cff'/%3E%3Cstop offset='1' stop-color='%23ff5ca8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M18 14v36M18 22l14 9-14 9M38 14v36M38 22l10 8' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+Runic&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* A changelog in the landing page's world: aurora behind, one glass card per release, newest
+   first, planned releases dimmed below. Static on purpose; no scroll effects to wait for. */
+:root{--bg:#0b0614;--ink:#f1ecff;--muted:#b3a8d4;--faint:#7f749e;--a0:#7c5cff;--a1:#ff5ca8;--a2:#22d3ee;--ok:#34d399;--wip:#ffb547;
+  --glass:rgba(29,20,48,.5);--line:rgba(255,255,255,.12);--font:"Instrument Sans",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;--display:"Cinzel",Georgia,serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--font);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background:radial-gradient(60% 45% at 12% 8%,rgba(124,92,255,.45),transparent 70%),radial-gradient(50% 40% at 92% 18%,rgba(255,92,168,.32),transparent 70%),
+  radial-gradient(60% 50% at 70% 100%,rgba(34,211,238,.25),transparent 70%),var(--bg);background-attachment:fixed}
+a{color:var(--a2)}
+:focus-visible{outline:2px solid var(--a0);outline-offset:3px;border-radius:8px}
+.wrap{max-width:860px;margin:0 auto;padding:40px max(20px,env(safe-area-inset-right,0px)) 80px max(20px,env(safe-area-inset-left,0px))}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  box-shadow:0 24px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.14)}
+nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 8px 16px;border-radius:999px;margin-bottom:56px}
+nav a{text-decoration:none;color:var(--ink);font-weight:700;display:flex;align-items:center;gap:9px}
+nav a i{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--a0),var(--a1));display:grid;place-items:center;font-style:normal;font-family:"Noto Sans Runic",serif;font-size:15px;color:#fff}
+nav .links{display:flex;gap:6px}
+nav .links a{font-weight:500;font-size:14px;color:var(--muted);padding:8px 12px;border-radius:999px}
+nav .links a:hover{color:var(--ink);background:var(--line)}
+h1{font-family:var(--display);font-size:clamp(40px,7vw,68px);line-height:1.05;margin:0 0 12px;background:linear-gradient(90deg,var(--a0),var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--muted);margin:0 0 44px;max-width:60ch}
+.rel{padding:28px 30px;margin-bottom:20px}
+.rel header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:6px}
+.rel h2{margin:0;font-size:28px;font-family:var(--mono);font-weight:500;letter-spacing:-.01em}
+.tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.tag.latest{background:rgba(52,211,153,.16);color:var(--ok)}
+.tag.planned{background:rgba(255,181,71,.16);color:var(--wip)}
+.date{color:var(--faint);font-size:14px}
+.rel h3{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--a2);margin:22px 0 8px;font-family:var(--mono);font-weight:500}
+.rel ul{margin:0;padding-left:20px}
+.rel li{margin:4px 0}
+.rel li b{color:var(--ink)}
+.dl{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;font-weight:600;text-decoration:none;color:#fff;background:linear-gradient(135deg,var(--a0),var(--a1));box-shadow:0 10px 26px rgba(124,92,255,.35)}
+.sha{font-family:var(--mono);font-size:12px;color:var(--faint);word-break:break-all}
+.planned-list .rel{opacity:.72;padding:22px 26px}
+.planned-list .rel h2{font-size:22px}
+.planned-list p{margin:4px 0 0;color:var(--muted)}
+footer{margin-top:40px;color:var(--faint);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="glass" aria-label="Main">
+    <a href="../"><i>ᚹ</i>WinKillSwitch</a>
+    <div class="links"><a href="../">Home</a><a href="https://github.com/Ege-BULUT/WinKillSwitch">GitHub</a></div>
+  </nav>
+
+  <h1>Release notes</h1>
+  <p class="lede">What changed in each version of WinKillSwitch. The newest notes always appear first on <a href="https://github.com/Ege-BULUT/WinKillSwitch/releases">GitHub Releases</a>, together with every download.</p>
+
+  <article class="rel glass" id="v0.1.0">
+    <header><h2>v0.1.0</h2><span class="tag latest">First release</span><span class="date">November 8, 2026</span></header>
+    <p>The first public alpha: the glass interface, live monitoring, groups and themes.</p>
+    <h3>Added</h3>
+    <ul>
+      <li><b>Live process table</b> refreshed every 1.5 seconds with name, PID, CPU and memory, plus search by name, PID or path.</li>
+      <li><b>Process groups</b>: create, rename in place, delete, add the selected rows, and see which members are running.</li>
+      <li><b>Glass interface</b> drawn on the GPU with Rune and rune-fx: liquid, fluted and frosted glass over a live palette gradient, with a floating glass tab bar.</li>
+      <li><b>Six palettes</b> with official light and dark variants (Rune Aurora, Catppuccin, Rosé Pine, Tokyo Night, Kanagawa, Everforest), an accent picker, glass style and strength, and an animated background you can turn off.</li>
+      <li><b>Responsive under load</b>: sampling runs on a background thread at lower priority while the interface runs above normal priority.</li>
+      <li><b>Safety sheets</b> that list every process before any destructive action, and a one click relaunch as administrator.</li>
+      <li><code>--version</code> flag and a headless <code>--scene demo --snap</code> render for scripts and agents.</li>
+    </ul>
+    <h3>Known limitations</h3>
+    <ul>
+      <li>Ending processes and PauseSwitch's system changes are wired into the interface but not implemented yet; the app says so when you use them.</li>
+      <li>The executable is not code signed, so SmartScreen may warn on first launch.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.1.0/WinKillSwitch.exe">Download v0.1.0</a>
+      <span class="sha">SHA-256 e03a0e77db4185cd83d194933d53e3bd70c3011af3467cea18c6a6d40b74d0bd</span>
+    </div>
+  </article>
+
+  <section class="planned-list" aria-label="Planned releases">
+    <article class="rel glass"><header><h2>v0.2.0</h2><span class="tag planned">Planned</span></header><p>Memory cleaner: a live gauge of memory in use, cached and free, and one Clean button that shows exactly what it freed.</p></article>
+    <article class="rel glass"><header><h2>v0.3.0</h2><span class="tag planned">Planned</span></header><p>Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step.</p></article>
+    <article class="rel glass"><header><h2>v0.3.x</h2><span class="tag planned">Planned</span></header><p>One feature per release: process info card, GPU column, find by window, quick palette, process tree, file lock finder, slowdown diagnosis, new process alerts, CPU and memory caps, wider autostart coverage, per process network, and rule packs.</p></article>
+    <article class="rel glass"><header><h2>v0.4.0</h2><span class="tag planned">Planned</span></header><p>The complete set, tested together.</p></article>
+  </section>
+
+  <footer>WinKillSwitch is MIT licensed and not affiliated with Microsoft.</footer>
+</div>
+</body>
+</html>

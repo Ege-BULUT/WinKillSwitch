@@ -1,0 +1,13 @@
+{"events": [
+  {"t": 0.9, "type": "tap", "key": "group-3", "hold": 0.08},
+  {"t": 2.0, "type": "tap", "key": "group-1", "hold": 0.08},
+  {"t": 3.1, "type": "tap", "key": "tab-PauseSwitch", "hold": 0.08},
+  {"t": 4.4, "type": "tap", "key": "tab-Settings", "hold": 0.08},
+  {"t": 5.6, "type": "tap", "key": "pal-tokyo-night", "hold": 0.08},
+  {"t": 6.8, "type": "tap", "key": "pal-rose-pine", "hold": 0.08},
+  {"t": 8.0, "type": "tap", "key": "acc-2", "hold": 0.08},
+  {"t": 9.2, "type": "tap", "key": "pal-aurora", "hold": 0.08},
+  {"t": 10.4, "type": "tap", "key": "acc-0", "hold": 0.08},
+  {"t": 11.5, "type": "tap", "key": "tab-Processes", "hold": 0.08},
+  {"t": 13.2, "type": "mark", "name": "end"}
+]}

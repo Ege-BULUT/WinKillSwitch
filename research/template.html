@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>winkillswitch Özellik Araştırması</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: summary header with category toggles over one sortable table; detail on hover/click.
+   Palette follows the app's Rune Aurora palette so the report reads as part of the product. */
+:root{
+  --bg:#f6f1ff; --surface:#ffffff; --sunk:#efe8fb; --ink:#2a1f45; --muted:#6f6390; --faint:#9a90b5;
+  --line:#e4dcf3; --line-strong:#d3c7ea; --accent:#6d4aff; --accent-soft:#ece6ff;
+  --shadow:0 1px 2px rgba(42,31,69,.05),0 10px 28px rgba(42,31,69,.08);
+  --font:"Instrument Sans",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#120a1e; --surface:#1b1229; --sunk:#221836; --ink:#f1ecff; --muted:#a99cc8; --faint:#7a6e98;
+  --line:#2c2142; --line-strong:#3a2d55; --accent:#9b84ff; --accent-soft:#2a1f4a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#120a1e; --surface:#1b1229; --sunk:#221836; --ink:#f1ecff; --muted:#a99cc8; --faint:#7a6e98;
+  --line:#2c2142; --line-strong:#3a2d55; --accent:#9b84ff; --accent-soft:#2a1f4a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 30px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1320px;margin:0 auto;padding:36px 24px 60px}
+
+header{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+h1{margin:0;font-size:26px;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;max-width:72ch}
+.tools{display:flex;gap:8px;align-items:center}
+.btn{padding:7px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);font-size:13px;font-weight:500;color:var(--muted)}
+.btn:hover{color:var(--ink)}
+input[type=search]{padding:8px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;width:240px}
+
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:26px 0 18px}
+.cat{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px 14px 12px;border-radius:14px;background:var(--surface);
+  border:1px solid var(--line);box-shadow:var(--shadow);transition:opacity .15s,border-color .15s,transform .15s}
+.cat:hover{transform:translateY(-1px)}
+.cat[aria-pressed="false"]{opacity:.45;box-shadow:none}
+.cat .top{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.cat .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.cat .sw{margin-left:auto;width:30px;height:18px;border-radius:9px;background:var(--line-strong);position:relative;transition:background .15s}
+.cat .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.cat[aria-pressed="true"] .sw{background:var(--c)}
+.cat[aria-pressed="true"] .sw::after{transform:translateX(12px)}
+.cat p{margin:0;font-size:12.5px;color:var(--muted)}
+.cat small{font-size:11.5px;color:var(--faint)}
+
+.meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;color:var(--faint);font-size:12.5px;margin:0 2px 8px}
+.tablewrap{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{position:sticky;top:0;background:var(--sunk);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;z-index:1}
+th button{display:inline-flex;align-items:center;gap:6px;letter-spacing:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;color:inherit}
+th button:hover{color:var(--ink)}
+th .arr{opacity:.35;font-size:10px}
+th[aria-sort] .arr{opacity:1;color:var(--accent)}
+td.num,th.num{text-align:center}
+tbody tr{transition:background .12s;cursor:pointer}
+tbody tr:hover{background:var(--sunk)}
+tr.open{background:var(--accent-soft)!important}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;
+  background:color-mix(in srgb,var(--c) 16%,transparent);color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.title{font-weight:600;min-width:180px}
+.short{color:var(--muted);min-width:260px;max-width:460px}
+.short span{border-bottom:1px dashed var(--line-strong)}
+.pips{display:inline-flex;gap:3px;align-items:center}
+.pips b{width:7px;height:16px;border-radius:2px;background:var(--line-strong)}
+.pips b.on{background:var(--pc)}
+.pips em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:6px}
+.score{font-family:var(--mono);font-weight:600;font-size:13.5px;padding:3px 8px;border-radius:7px}
+.detail td{padding:0 14px 16px;border-bottom:1px solid var(--line);background:var(--accent-soft)}
+.detail .box{padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);max-width:900px}
+.detail p{margin:0 0 10px}
+.detail ul{margin:0;padding-left:18px;font-size:13px}
+
+.pop{position:fixed;z-index:20;max-width:440px;padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line-strong);
+  box-shadow:0 18px 50px rgba(0,0,0,.25);font-size:13.5px;line-height:1.55;pointer-events:none}
+.pop h4{margin:0 0 6px;font-size:14px}
+.pop .src{margin-top:8px;font-size:11.5px;color:var(--faint);word-break:break-all}
+.empty{padding:40px;text-align:center;color:var(--faint)}
+footer{color:var(--faint);font-size:12.5px;margin-top:22px}
+@media (max-width:640px){.wrap{padding:24px 16px 40px}input[type=search]{width:100%}.tools{width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>winkillswitch'i nasıl daha iyi yaparız?</h1>
+      <p class="sub">Görev Yöneticisi, Process Explorer, System Informer, Process Lasso ve Autoruns ile karşılaştırma ve kullanıcı istekleri üzerinden derlenen 5 kategori, 50 özellik. Bir satırın üstüne gel, uzun açıklama ve kaynaklar açılır; tıklayınca sabitlenir.</p>
+    </div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Başlık veya açıklamada ara" aria-label="Ara">
+      <button class="btn" id="all">Tümü</button>
+      <button class="btn" id="none">Hiçbiri</button>
+    </div>
+  </header>
+
+  <section class="cats" id="cats" aria-label="Kategoriler"></section>
+
+  <div class="meta"><span id="count"></span><span>Etki/Efor = etki ÷ efor; büyük olan, az emekle çok değer demek.</span></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>Seçili kategorilerde eşleşen özellik yok.</div>
+  </div>
+  <footer id="foot"></footer>
+</div>
+<div class="pop" id="pop" hidden></div>
+
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+const D=JSON.parse(document.getElementById("data").textContent);
+const COLOR=Object.fromEntries(D.categories.map(c=>[c.name,c.color]));
+const F=D.features.map((f,i)=>({...f,id:i,score:f.impact/f.effort}));
+const COLS=[
+  {id:"category",label:"Kategori"},
+  {id:"title",label:"Başlık"},
+  {id:"short",label:"Kısa açıklama",nosort:true},
+  {id:"impact",label:"Etki",num:true},
+  {id:"effort",label:"Efor",num:true},
+  {id:"score",label:"Etki/Efor",num:true},
+  {id:"urgency",label:"Aciliyet",num:true},
+];
+let st={on:new Set(D.categories.map(c=>c.name)),sort:"score",dir:-1,q:"",open:null};
+try{const s=JSON.parse(localStorage.getItem("wks-research")||"null");if(s){st.on=new Set(s.on);st.sort=s.sort;st.dir=s.dir;}}catch(e){}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save=()=>{try{localStorage.setItem("wks-research",JSON.stringify({on:[...st.on],sort:st.sort,dir:st.dir}));}catch(e){}};
+
+function cats(){
+  document.getElementById("cats").innerHTML=D.categories.map(c=>{
+    const n=F.filter(f=>f.category===c.name).length;
+    const top=F.filter(f=>f.category===c.name).sort((a,b)=>b.score-a.score||b.impact-a.impact)[0];
+    return `<button class="cat" style="--c:${c.color}" data-cat="${esc(c.name)}" aria-pressed="${st.on.has(c.name)}">
+      <span class="top"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}<span class="sw" aria-hidden="true"></span></span>
+      <p>${esc(c.description)}</p><small>${n} özellik · en verimli: ${esc(top.title)}</small></button>`;}).join("");
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{const n=b.dataset.cat;st.on.has(n)?st.on.delete(n):st.on.add(n);save();render();});
+}
+function pips(v,color){return `<span class="pips" style="--pc:${color}">${[1,2,3,4,5].map(i=>`<b class="${i<=v?"on":""}"></b>`).join("")}<em>${v}</em></span>`;}
+const lvl=(v,good)=>{const t=good?(v-1)/4:(5-v)/4;return `hsl(${Math.round(t*130)} 65% 48%)`;};
+function scoreCell(s){const t=Math.min(1,(s-0.2)/2.3);return `<span class="score" style="background:hsl(${Math.round(t*130)} 70% 50% / .18);color:hsl(${Math.round(t*130)} 60% 40%)">${s.toFixed(2)}</span>`;}
+
+function head(){
+  document.getElementById("head").innerHTML=COLS.map(c=>{
+    if(c.nosort)return `<th>${c.label}</th>`;
+    const on=st.sort===c.id;const arr=on?(st.dir<0?"▼":"▲"):"↕";
+    return `<th class="${c.num?"num":""}" ${on?`aria-sort="${st.dir<0?"descending":"ascending"}"`:""}><button data-sort="${c.id}">${c.label}<span class="arr">${arr}</span></button></th>`;}).join("");
+  document.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{const id=b.dataset.sort;
+    if(st.sort===id)st.dir=-st.dir;else{st.sort=id;st.dir=(id==="category"||id==="title"||id==="effort")?1:-1;}save();render();});
+}
+function rows(){
+  const q=st.q.toLowerCase();
+  let list=F.filter(f=>st.on.has(f.category)&&(!q||(f.title+" "+f.short+" "+f.long).toLowerCase().includes(q)));
+  const k=st.sort;
+  list.sort((a,b)=>{let x=a[k],y=b[k];const r=typeof x==="string"?x.localeCompare(y,"tr"):x-y;
+    return r*st.dir||(b.score-a.score)||(b.urgency-a.urgency);});
+  document.getElementById("count").textContent=`${list.length} / ${F.length} özellik gösteriliyor`;
+  document.getElementById("empty").hidden=list.length>0;
+  document.getElementById("rows").innerHTML=list.map(f=>{
+    const c=COLOR[f.category];const open=st.open===f.id;
+    const row=`<tr data-id="${f.id}" class="${open?"open":""}" aria-expanded="${open}">
+      <td><span class="chip" style="--c:${c}"><i></i>${esc(f.category)}</span></td>
+      <td class="title">${esc(f.title)}</td>
+      <td class="short" data-pop="${f.id}"><span>${esc(f.short)}</span></td>
+      <td class="num">${pips(f.impact,lvl(f.impact,true))}</td>
+      <td class="num">${pips(f.effort,lvl(f.effort,false))}</td>
+      <td class="num">${scoreCell(f.score)}</td>
+      <td class="num">${pips(f.urgency,lvl(f.urgency,true))}</td></tr>`;
+    const det=open?`<tr class="detail"><td colspan="7"><div class="box"><p>${esc(f.long)}</p><ul>${f.sources.map(u=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></li>`).join("")}</ul></div></td></tr>`:"";
+    return row+det;}).join("");
+  document.querySelectorAll("tbody tr[data-id]").forEach(tr=>tr.onclick=e=>{if(e.target.closest("a"))return;const id=+tr.dataset.id;st.open=st.open===id?null:id;hidePop();rows();});
+  document.querySelectorAll("[data-pop]").forEach(td=>{
+    td.onmouseenter=e=>showPop(+td.dataset.pop,e);td.onmousemove=e=>movePop(e);td.onmouseleave=hidePop;});
+}
+const pop=document.getElementById("pop");
+function showPop(id,e){if(st.open===id)return;const f=F[id];
+  pop.innerHTML=`<h4>${esc(f.title)}</h4>${esc(f.long)}<div class="src">${f.sources.map(esc).join("<br>")}</div>`;pop.hidden=false;movePop(e);}
+function movePop(e){if(pop.hidden)return;const pad=16,w=pop.offsetWidth,h=pop.offsetHeight;
+  let x=e.clientX+pad,y=e.clientY+pad;if(x+w>innerWidth-8)x=e.clientX-w-pad;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-pad);
+  pop.style.left=x+"px";pop.style.top=y+"px";}
+function hidePop(){pop.hidden=true;}
+function render(){cats();head();rows();}
+document.getElementById("q").oninput=e=>{st.q=e.target.value;rows();};
+document.getElementById("all").onclick=()=>{st.on=new Set(D.categories.map(c=>c.name));save();render();};
+document.getElementById("none").onclick=()=>{st.on.clear();save();render();};
+document.getElementById("foot").textContent=`Araştırma: ${D.generated} · ${F.length} özellik · Kaynaklar her satırın ayrıntısında. Puanlar araştırmacı agent'ın tahminidir; uygulama kararı vermeden önce gözden geçir.`;
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WinKillSwitch</title>
+<meta name="description" content="A native Windows process manager rendered on the GPU with Rust and Rune. Live monitoring, process groups, glass interface and six palettes.">
+<meta property="og:title" content="WinKillSwitch">
+<meta property="og:description" content="A native Windows process manager rendered on the GPU with Rust and Rune.">
+<meta property="og:image" content="assets/hero-dark.webp">
+<meta name="theme-color" content="#0b0614">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c5cff'/%3E%3Cstop offset='1' stop-color='%23ff5ca8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M18 14v36M18 22l14 9-14 9M38 14v36M38 22l10 8' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Noto+Sans+Runic&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Concept: the app's own world on the web. A live palette mesh behind glass, runes resolving into
+   the name, and every section built from the same pieces the app uses: glass panels, the floating
+   tab bar, palettes and springs. Dark first; the mode toggle swaps to the palette's light side. */
+:root{
+  --bg:#0b0614; --ink:#f1ecff; --muted:#b3a8d4; --faint:#7f749e;
+  --a0:#7c5cff; --a1:#ff5ca8; --a2:#22d3ee; --a3:#4f8dff;
+  --glass:rgba(29,20,48,.42); --glass-hi:rgba(255,255,255,.16); --line:rgba(255,255,255,.12);
+  --shadow:0 30px 80px rgba(0,0,0,.45);
+  --display:"Cinzel",Georgia,serif; --runic:"Noto Sans Runic","Segoe UI Historic",serif;
+  --font:"Instrument Sans",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:dark;
+}
+:root.light{--ink:#231a3d; --muted:#5d5280; --faint:#8a80aa; --glass:rgba(255,255,255,.55); --glass-hi:rgba(255,255,255,.75);
+  --line:rgba(35,26,61,.12); --shadow:0 30px 70px rgba(60,40,110,.18); color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .6s,color .6s}
+img,video{max-width:100%;height:auto;display:block}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--a0);outline-offset:3px;border-radius:10px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+#mesh{position:fixed;inset:0;width:100%;height:100%;z-index:-2}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.08;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ---------- glass primitives ---------- */
+.glass{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:24px;
+  backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--shadow),inset 0 1px 0 var(--glass-hi)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.45),rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,.25));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+/* ---------- nav ---------- */
+nav.top{position:fixed;top:max(14px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:6px;
+  padding:7px 8px 7px 14px;border-radius:999px;width:max-content;max-width:calc(100vw - 24px)}
+nav.top .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.01em;margin-right:8px;text-decoration:none;white-space:nowrap}
+nav.top .brand i{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--a0),var(--a1));display:grid;place-items:center;font-style:normal;font-family:var(--runic);font-size:15px;color:#fff}
+nav.top a.link{padding:8px 12px;border-radius:999px;font-size:14px;color:var(--muted);text-decoration:none;transition:color .2s,background .2s}
+nav.top a.link:hover{color:var(--ink);background:var(--line)}
+.pill-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;transition:transform .3s var(--spring),box-shadow .3s}
+.pill-btn:hover{transform:translateY(-2px)}
+.pill-btn.solid{background:linear-gradient(135deg,var(--a0),var(--a1));color:#fff;box-shadow:0 10px 30px color-mix(in srgb,var(--a0) 45%,transparent)}
+.pill-btn.ghost{border:1px solid var(--line);background:var(--glass)}
+.mode{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.mode:hover{color:var(--ink);background:var(--line)}
+@media (max-width:760px){nav.top a.link{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding-top:150px;text-align:center;position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted)}
+.eyebrow b{width:8px;height:8px;border-radius:50%;background:var(--a2);box-shadow:0 0 0 0 var(--a2);animation:ping 2.2s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 9px transparent}}
+h1.title{font-family:var(--display);font-weight:700;font-size:clamp(38px,8.6vw,118px);letter-spacing:.01em;line-height:1;margin:26px 0 18px;
+  background:linear-gradient(90deg,var(--a0),var(--a1),var(--a2),var(--a3),var(--a0));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:sheen 9s linear infinite;filter:drop-shadow(0 8px 40px color-mix(in srgb,var(--a0) 35%,transparent));white-space:nowrap}
+@keyframes sheen{to{background-position:200% 0}}
+/* Spans stay inline: background-clip:text does not reach into inline-block children. */
+h1.title span{transition:opacity .45s}
+h1.title span.rune{font-family:var(--runic);font-weight:400;opacity:.7}
+.lede{max-width:640px;margin:0 auto;color:var(--muted);font-size:clamp(17px,2vw,20px)}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.cta .pill-btn{padding:14px 24px;font-size:16px}
+.note{margin-top:14px;font-size:13px;color:var(--faint)}
+
+.stage{perspective:1400px;margin:70px auto 0;max-width:1180px;position:relative}
+.window{transform-style:preserve-3d;transform:rotateX(24deg) scale(.9);transform-origin:50% 0;border-radius:22px;padding:10px;will-change:transform}
+.window .bar{display:flex;gap:7px;padding:6px 8px 12px}
+.window .bar i{width:11px;height:11px;border-radius:50%;background:var(--line)}
+.window img{border-radius:14px;width:100%}
+.orbit{position:absolute;padding:10px 14px;border-radius:16px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:9px;white-space:nowrap;will-change:transform}
+.orbit small{font-weight:500;color:var(--muted)}
+.orbit .dot{width:9px;height:9px;border-radius:50%}
+.o1{left:-3%;top:18%}.o2{right:-4%;top:34%}.o3{left:4%;bottom:12%}.o4{right:2%;bottom:6%}
+@media (max-width:860px){.orbit{display:none}}
+
+/* ---------- sections ---------- */
+section{padding:140px 0 0}
+.kicker{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--a2)}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(34px,5.4vw,64px);line-height:1.05;margin:12px 0 16px;letter-spacing:.005em;text-wrap:balance}
+.sub{color:var(--muted);max-width:620px;margin:0}
+.split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:56px;align-items:center}
+@media (max-width:960px){.split{grid-template-columns:1fr}}
+
+/* tab bar demo */
+.screen{position:relative;border-radius:22px;padding:10px;overflow:hidden}
+.screen .layer{position:relative}
+.screen img{border-radius:14px;width:100%;transition:opacity .5s,transform .7s var(--spring)}
+.screen img.next{position:absolute;inset:0;opacity:0;transform:scale(1.02)}
+.tabbar{position:relative;display:flex;margin:28px 0 0;padding:6px;border-radius:999px;width:max-content;max-width:100%}
+.tabbar button{position:relative;z-index:2;display:flex;align-items:center;gap:9px;padding:13px 22px;border-radius:999px;font-weight:600;font-size:15px;color:var(--muted);transition:color .3s}
+.tabbar button.on{color:var(--ink)}
+.tabbar button svg{width:17px;height:17px}
+.tabbar button.on svg{color:var(--a0)}
+.drop{position:absolute;z-index:1;top:6px;bottom:6px;left:6px;border-radius:999px;transition:transform .6s var(--spring),width .6s var(--spring);
+  background:color-mix(in srgb,var(--a0) 22%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -6px 14px rgba(255,255,255,.08),0 6px 20px rgba(0,0,0,.25);
+  backdrop-filter:blur(4px) saturate(2);-webkit-backdrop-filter:blur(4px) saturate(2)}
+.drop::after{content:"";position:absolute;inset:2px;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 55%)}
+.hint{margin-top:14px;color:var(--faint);font-size:14px}
+@media (max-width:520px){.tabbar button{padding:11px 13px;font-size:13.5px;gap:6px}.tabbar button svg{display:none}}
+
+/* palettes */
+.pals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:30px}
+@media (max-width:600px){.pals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pal{display:flex;flex-direction:column;gap:10px;padding:10px;border-radius:18px;text-align:left;transition:transform .4s var(--spring),border-color .3s}
+.pal:hover{transform:translateY(-3px)}
+.pal[aria-pressed="true"]{border-color:var(--a0);box-shadow:var(--shadow),0 0 0 2px var(--a0)}
+.pal .sw{display:flex;height:46px;border-radius:11px;overflow:hidden}
+.pal .sw span{flex:1;display:flex;align-items:flex-end;gap:4px;padding:7px}
+.pal .sw i{width:9px;height:9px;border-radius:50%}
+.pal b{font-size:14px;padding:0 4px}
+.modes{display:inline-flex;margin-top:18px;padding:4px;border-radius:999px}
+.modes button{padding:8px 18px;border-radius:999px;font-weight:600;font-size:14px;color:var(--muted);transition:background .3s,color .3s}
+.modes button.on{background:var(--ink);color:var(--bg)}
+
+/* glass styles */
+.glasslab{position:relative;margin-top:46px;border-radius:30px;overflow:hidden;min-height:440px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;padding:44px}
+@media (max-width:860px){.glasslab{grid-template-columns:1fr;padding:22px}}
+.blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.95}
+.b1{width:340px;height:340px;background:radial-gradient(circle at 35% 35%,#fff8,var(--a0) 40%,transparent 70%);left:-60px;top:-40px;animation:float1 14s ease-in-out infinite}
+.b2{width:300px;height:300px;background:radial-gradient(circle at 40% 40%,#fff7,var(--a1) 42%,transparent 70%);left:42%;top:30%;animation:float2 17s ease-in-out infinite}
+.b3{width:380px;height:380px;background:radial-gradient(circle at 50% 40%,#fff6,var(--a2) 40%,transparent 70%);right:-80px;bottom:-120px;animation:float3 19s ease-in-out infinite}
+.stripes{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 38px,rgba(255,255,255,.07) 38px 40px)}
+@keyframes float1{50%{transform:translate(260px,120px) scale(1.15)}}
+@keyframes float2{50%{transform:translate(-240px,-90px) scale(.85)}}
+@keyframes float3{50%{transform:translate(-300px,-60px) scale(1.1)}}
+.gcard{position:relative;z-index:1;border-radius:24px;padding:26px;display:flex;flex-direction:column;justify-content:flex-end;min-height:330px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 20px 50px rgba(0,0,0,.3)}
+.gcard h3{margin:0 0 6px;font-size:22px;color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+.gcard p{margin:0;color:rgba(255,255,255,.86);font-size:15px;text-shadow:0 1px 10px rgba(0,0,0,.4)}
+.liquid{backdrop-filter:blur(10px) saturate(1.9) brightness(1.08);-webkit-backdrop-filter:blur(10px) saturate(1.9) brightness(1.08);background:rgba(255,255,255,.06)}
+.liquid::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 12px 12px 30px rgba(255,255,255,.18),inset -14px -18px 34px rgba(0,0,0,.18)}
+.fluted{backdrop-filter:blur(3px) saturate(1.5);-webkit-backdrop-filter:blur(3px) saturate(1.5);background:rgba(255,255,255,.04)}
+.fluted::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 1px,rgba(255,255,255,.04) 1px 7px,rgba(0,0,0,.10) 7px 13px,rgba(255,255,255,.10) 13px 14px)}
+.fluted::after{content:"";position:absolute;inset:0;pointer-events:none;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 7px,transparent 7px 14px);mask:repeating-linear-gradient(90deg,#000 0 7px,transparent 7px 14px)}
+.frosted{backdrop-filter:blur(30px) saturate(1.2);-webkit-backdrop-filter:blur(30px) saturate(1.2);background:rgba(255,255,255,.12)}
+.gcard .tag{position:absolute;top:20px;left:22px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+
+/* features: pinned horizontal track */
+.hscroll{position:relative;overflow:hidden;padding:0}
+.hscroll .head{padding-top:140px}
+.track{display:flex;gap:22px;padding:46px max(20px,calc((100vw - 1240px)/2 + 20px)) 40px;width:max-content;will-change:transform}
+.fcard{width:min(400px,80vw);min-height:360px;border-radius:26px;padding:30px;display:flex;flex-direction:column;gap:14px}
+.fcard .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 85%,#fff 0%),color-mix(in srgb,var(--c) 45%,transparent));color:#fff;box-shadow:0 10px 30px color-mix(in srgb,var(--c) 40%,transparent)}
+.fcard .ic svg{width:26px;height:26px}
+.fcard h3{margin:6px 0 0;font-size:24px}
+.fcard p{margin:0;color:var(--muted)}
+.fcard ul{margin:auto 0 0;padding-left:18px;color:var(--muted);font-size:15px}
+.badge{align-self:flex-start;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:999px}
+.badge.ok{background:color-mix(in srgb,#34d399 18%,transparent);color:#34d399}
+.badge.wip{background:color-mix(in srgb,#ffb547 18%,transparent);color:#ffb547}
+@media (max-width:760px){.track{flex-direction:column;width:auto;padding:30px 20px}.fcard{width:auto}}
+
+/* video */
+.film{margin-top:44px;border-radius:26px;padding:12px}
+.film video{border-radius:16px;width:100%}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:40px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{padding:22px;border-radius:20px}
+.stat b{display:block;font-family:var(--display);font-size:44px;line-height:1;background:linear-gradient(135deg,var(--a0),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{color:var(--muted);font-size:14px}
+
+/* roadmap */
+.road{position:relative;margin-top:50px;padding-left:44px;max-width:760px}
+.road .rail{position:absolute;left:12px;top:6px;bottom:6px;width:2px;background:var(--line);border-radius:2px}
+.road .fill{position:absolute;left:12px;top:6px;width:2px;height:0;border-radius:2px;background:linear-gradient(var(--a0),var(--a1),var(--a2));box-shadow:0 0 14px var(--a1)}
+.step{position:relative;padding:0 0 34px}
+.step::before{content:"";position:absolute;left:-38px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--faint);transition:border-color .4s,background .4s,box-shadow .4s}
+.step.lit::before{border-color:var(--a1);background:var(--a1);box-shadow:0 0 0 6px color-mix(in srgb,var(--a1) 25%,transparent)}
+.step h4{margin:0;font-size:19px}
+.step p{margin:4px 0 0;color:var(--muted);font-size:15px}
+.step .when{font-family:var(--mono);font-size:12px;color:var(--a2);letter-spacing:.08em;text-transform:uppercase}
+
+/* code */
+.code{margin-top:30px;border-radius:22px;padding:24px 26px;font-family:var(--mono);font-size:14px;line-height:1.75;overflow-x:auto;white-space:pre}
+.code .k{color:var(--a1)}.code .f{color:var(--a2)}.code .s{color:#a6e3a1}.code .c{color:var(--faint)}
+
+/* final */
+.final{text-align:center;padding:160px 0 60px}
+.final h2{font-size:clamp(40px,7vw,96px)}
+footer{border-top:1px solid var(--line);margin-top:120px;padding:28px 0 calc(40px + env(safe-area-inset-bottom,0px));color:var(--faint);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
+footer a{color:var(--muted);text-decoration:none;margin-right:16px}
+footer a:hover{color:var(--ink)}
+
+.reveal{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.window{transform:none}}
+</style>
+</head>
+<body>
+<canvas id="mesh" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<nav class="top glass" aria-label="Main">
+  <a class="brand" href="#top"><i>ᚹ</i>WinKillSwitch</a>
+  <a class="link" href="#interface">Interface</a>
+  <a class="link" href="#palettes">Palettes</a>
+  <a class="link" href="#features">Features</a>
+  <a class="link" href="#roadmap">Roadmap</a>
+  <a class="link" href="/release-notes">Release notes</a>
+  <button class="mode" id="mode" aria-label="Switch light or dark mode" title="Light / dark">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="modeicon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+  </button>
+  <a class="pill-btn solid" href="https://github.com/Ege-BULUT/WinKillSwitch">GitHub</a>
+</nav>
+
+<header class="hero wrap" id="top">
+  <span class="eyebrow glass"><b></b>Alpha · Windows 10 and 11 · Open source</span>
+  <h1 class="title" id="title" aria-label="WinKillSwitch">WinKillSwitch</h1>
+  <p class="lede">A native process manager for Windows, drawn entirely on the GPU. Watch what runs, gather the apps you care about into groups, and make it look exactly how you like.</p>
+  <div class="cta">
+    <a class="pill-btn solid" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/latest/download/WinKillSwitch.exe">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10 4.5v7H3zM11 4.3l10-1.3v8.5H11zM3 12.5h7v7l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>Download for Windows</a>
+    <a class="pill-btn ghost glass" href="https://github.com/Ege-BULUT/WinKillSwitch">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2 .4-2.5-.5-2.7-1-.1-.3-.5-1-.9-1.2-.3-.2-.8-.6 0-.6.7 0 1.2.7 1.4 1 .8 1.3 2 1 2.6.7 0-.6.3-1 .6-1.2-2-.2-3.7-1-3.7-4.3 0-1 .3-1.7.9-2.3 0-.3-.4-1.1 0-2.3 0 0 .7-.2 2.3.9a7.9 7.9 0 0 1 4.2 0c1.6-1.1 2.3-.9 2.3-.9.4 1.2.1 2 0 2.3.6.6.9 1.3.9 2.3 0 3.3-2 4-3.8 4.3.3.3.6.8.6 1.6v2.4c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z"/></svg>Star on GitHub</a>
+  </div>
+  <p class="note">Single portable .exe, latest release. MIT licensed. <a href="/release-notes">Release notes</a> · <a href="https://github.com/Ege-BULUT/WinKillSwitch/releases">All versions</a></p>
+
+  <div class="stage" id="stage">
+    <div class="window glass" id="window">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <img id="heroShot" src="assets/hero-dark.webp" alt="WinKillSwitch process view with glass panels" width="1800" height="1125">
+    </div>
+    <div class="orbit glass o1" data-depth="40"><span class="dot" style="background:#34d399"></span>30 processes<small>live, every 1.5 s</small></div>
+    <div class="orbit glass o2" data-depth="70"><span class="dot" style="background:var(--a1)"></span>Rosé Pine<small>6 palettes</small></div>
+    <div class="orbit glass o3" data-depth="55"><span class="dot" style="background:var(--a2)"></span>Liquid glass<small>rune-fx</small></div>
+    <div class="orbit glass o4" data-depth="30"><span class="dot" style="background:#ffb547"></span>PauseSwitch<small>in development</small></div>
+  </div>
+</header>
+
+<section class="wrap" id="interface">
+  <div class="split">
+    <div>
+      <div class="kicker">The interface</div>
+      <h2>A tab bar made of glass.</h2>
+      <p class="sub">The selection is a drop of clearer glass that springs between tabs, exactly like in the app. Try it: each tab shows the real screen behind it.</p>
+      <div class="tabbar glass" id="tabbar" role="tablist" aria-label="App screens">
+        <span class="drop" id="drop"></span>
+        <button role="tab" class="on" data-shot="hero-dark" aria-selected="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="3" width="11" height="3" rx="1"/><rect x="2.5" y="7" width="11" height="3" rx="1"/><rect x="2.5" y="11" width="7" height="2.5" rx="1"/></svg>Processes</button>
+        <button role="tab" data-shot="pause-dark" aria-selected="false"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="3.5" width="2" height="9" rx="1"/><rect x="9" y="3.5" width="2" height="9" rx="1"/></svg>PauseSwitch</button>
+        <button role="tab" data-shot="settings-dark" aria-selected="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"/></svg>Settings</button>
+      </div>
+      <p class="hint">Screens use the built in demo machine.</p>
+    </div>
+    <div class="screen glass" id="screen"><div class="layer"><img id="shotA" src="assets/hero-dark.webp" alt="Selected app screen" width="1800" height="1125"><img id="shotB" class="next" src="assets/hero-dark.webp" alt="" aria-hidden="true" width="1800" height="1125"></div></div>
+  </div>
+</section>
+
+<section class="wrap" id="palettes">
+  <div class="kicker">Make it yours</div>
+  <h2>Six palettes. Both sides of each.</h2>
+  <p class="sub">Rune Aurora, Catppuccin, Rosé Pine, Tokyo Night, Kanagawa and Everforest, with their official light and dark variants. Pick one here and this whole page changes with it.</p>
+  <div class="split" style="margin-top:10px">
+    <div>
+      <div class="pals" id="pals"></div>
+      <div class="modes glass" id="modes"><button data-m="dark" class="on">Dark</button><button data-m="light">Light</button></div>
+    </div>
+    <div class="screen glass"><div class="layer"><img id="palA" src="assets/hero-dark.webp" alt="App in the selected palette" width="1800" height="1125"><img id="palB" class="next" src="assets/hero-dark.webp" alt="" aria-hidden="true" width="1800" height="1125"></div></div>
+  </div>
+</section>
+
+<section class="wrap" id="glass">
+  <div class="kicker">rune-fx</div>
+  <h2>Three kinds of glass.</h2>
+  <p class="sub">Panels refract and blur whatever drifts behind them, tinted toward your palette. Choose the style and strength in Settings, or switch the motion off to keep the GPU idle.</p>
+  <div class="glasslab glass">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="stripes"></span>
+    <div class="gcard liquid"><span class="tag">01</span><h3>Liquid</h3><p>Clear glass with a bright, refracting rim. The tab bar is made of it.</p></div>
+    <div class="gcard fluted"><span class="tag">02</span><h3>Fluted</h3><p>Reeded glass that splits the colors behind it into ribs.</p></div>
+    <div class="gcard frosted"><span class="tag">03</span><h3>Frosted</h3><p>Heavy frost for the calmest, most readable backdrop.</p></div>
+  </div>
+</section>
+
+<section class="hscroll" id="features">
+  <div class="wrap head">
+    <div class="kicker">Features</div>
+    <h2>What it does, honestly.</h2>
+    <p class="sub">Green works today. Amber is designed, wired into the interface and being built next.</p>
+  </div>
+  <div class="track" id="track">
+    <article class="fcard glass" style="--c:#4f8dff"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></span><span class="badge ok">Works today</span><h3>Live monitoring</h3><p>Every process with CPU and memory, refreshed every 1.5 seconds, searchable by name, PID or path.</p><ul><li>Sortable, virtualised table</li><li>Multi select with the keyboard</li></ul></article>
+    <article class="fcard glass" style="--c:#7c5cff"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg></span><span class="badge ok">Works today</span><h3>Process groups</h3><p>Collect the apps you care about. See at a glance which members are running.</p><ul><li>Rename in place</li><li>Saved between sessions</li></ul></article>
+    <article class="fcard glass" style="--c:#ff5ca8"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="badge ok">Works today</span><h3>Glass and palettes</h3><p>Six palettes, light and dark, three glass styles and an accent picker, all instant.</p><ul><li>Animated or still background</li><li>Responsive down to small windows</li></ul></article>
+    <article class="fcard glass" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="badge ok">Works today</span><h3>Confirm first</h3><p>Every destructive action shows a sheet listing each process before anything happens.</p><ul><li>Admin detection</li><li>One click elevated relaunch</li></ul></article>
+    <article class="fcard glass" style="--c:#7c5cff"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="2.5"/><path d="M9 2.5v3.5M15 2.5v3.5M9 18v3.5M15 18v3.5M2.5 9h3.5M2.5 15h3.5M18 9h3.5M18 15h3.5"/></svg></span><span class="badge wip">Coming in v0.2</span><h3>Memory cleaner</h3><p>A live gauge of what is in use, cached and free, and one Clean button that shows exactly how much it gave back.</p></article>
+    <article class="fcard glass" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M7 12h6"/><circle cx="17" cy="12" r="1" fill="currentColor"/></svg></span><span class="badge wip">Coming in v0.3</span><h3>Disk cleaner</h3><p>Analyze temporary files, caches, crash dumps and update leftovers, review the list, then clean in one step.</p></article>
+    <article class="fcard glass" style="--c:#ffb547"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span><span class="badge wip">In development</span><h3>Kill all related</h3><p>End an app with its child processes and siblings from the same install, then keep it closed until you start it yourself.</p></article>
+    <article class="fcard glass" style="--c:#34d399"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3" height="14" rx="1.5"/><rect x="14" y="5" width="3" height="14" rx="1.5"/></svg></span><span class="badge wip">In development</span><h3>PauseSwitch</h3><p>Stop a group from starting on its own: Startup apps, services and scheduled tasks. Switch it off and every setting returns exactly as it was.</p></article>
+  </div>
+</section>
+
+<section class="wrap" id="tour">
+  <div class="kicker">In motion</div>
+  <h2>Thirteen seconds of it.</h2>
+  <p class="sub">Recorded straight from the app with Rune's headless renderer: groups, tabs, and palettes changing live.</p>
+  <div class="film glass"><video id="film" src="assets/tour.mp4" poster="assets/tour-poster.jpg" muted loop playsinline preload="metadata" aria-label="WinKillSwitch tour"></video></div>
+  <div class="stats">
+    <div class="stat glass"><b data-count="6">6</b><span>palettes, light and dark</span></div>
+    <div class="stat glass"><b data-count="3">3</b><span>kinds of glass</span></div>
+    <div class="stat glass"><b data-count="1">1</b><span>portable .exe</span></div>
+    <div class="stat glass"><b>GPU</b><span>every pixel, via wgpu</span></div>
+  </div>
+</section>
+
+<section class="wrap" id="roadmap">
+  <div class="kicker">Roadmap</div>
+  <h2>Where it goes next.</h2>
+  <div class="road" id="road">
+    <span class="rail"></span><span class="fill" id="fill"></span>
+    <div class="step"><span class="when">v0.1 · Released</span><h4>Interface, monitoring, groups, themes</h4><p>The glass app you see here, with live sampling off the UI thread and saved groups.</p></div>
+    <div class="step"><span class="when">v0.2</span><h4>Memory cleaner</h4><p>A gauge of memory in use, cached and free, and one button that shows what it freed.</p></div>
+    <div class="step"><span class="when">v0.3</span><h4>Disk cleaner</h4><p>Temporary files, caches and leftovers, analyzed and cleaned in one step.</p></div>
+    <div class="step"><span class="when">v0.3.x</span><h4>See more</h4><p>What is this process, per process GPU, find by window, process tree, file locks and a one click "why is my PC slow".</p></div>
+    <div class="step"><span class="when">v0.3.x</span><h4>Control more</h4><p>New process alerts, CPU and memory caps, wider autostart coverage, per process network, and rule packs with Gaming mode and Bloat blocker profiles.</p></div>
+    <div class="step"><span class="when">v0.4</span><h4>The complete set</h4><p>Everything above, tested together.</p></div>
+    <div class="step"><span class="when">Later</span><h4>Ending processes, PauseSwitch backend, signed releases</h4><p>Closing apps gracefully, autostart control that restores exactly, and a winget package.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="rune">
+  <div class="kicker">Built with Rune</div>
+  <h2>Native, not a web view.</h2>
+  <p class="sub">WinKillSwitch is plain Rust. Rune lays it out, animates it on springs and draws it on the GPU, and rune-fx supplies the glass. This is the real code behind a panel:</p>
+  <div class="code glass"><span class="c">// src/ui/glass.rs</span>
+<span class="k">pub fn</span> <span class="f">panel</span>(l: &amp;Look, a: &amp;Appearance, key: &amp;str, content: El) -&gt; El {
+    col().key(key).radius(<span class="s">20.0</span>)
+        .child(rune::<span class="f">effect</span>(LENS).effect_backdrop(<span class="k">true</span>)
+            .absolute(<span class="s">0.0</span>, <span class="s">0.0</span>).w_full().h_full().radius(<span class="s">20.0</span>))
+        .child(content)
+}</div>
+</section>
+
+<section class="final wrap">
+  <h2>Your processes,<br>in glass.</h2>
+  <div class="cta">
+    <a class="pill-btn solid" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/latest/download/WinKillSwitch.exe">Download for Windows</a>
+    <a class="pill-btn ghost glass" href="https://github.com/Ege-BULUT/WinKillSwitch">Read the source</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div><a href="https://github.com/Ege-BULUT/WinKillSwitch">GitHub</a><a href="https://github.com/Ege-BULUT/WinKillSwitch#readme">README</a><a href="https://github.com/anomalyco/rune">Rune</a><a href="/release-notes">Release notes</a><a href="https://github.com/Ege-BULUT/WinKillSwitch/blob/main/LICENSE">MIT License</a></div>
+    <div>WinKillSwitch is not affiliated with Microsoft.</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+// ?still shows every section at rest (no scroll reveals), for previews and screenshots.
+const still = location.search.includes("still");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- palettes (the app's own values) ---------- */
+const PALS = [
+  {id:"aurora", name:"Rune Aurora", dark:{bg:"#120a1e",a:["#7c5cff","#ff5ca8","#22d3ee","#4f8dff"],shot:"hero-dark"}, light:{bg:"#f6f1ff",a:["#6d4aff","#e0408d","#0891b2","#2f6fe4"],shot:"hero-light"}},
+  {id:"catppuccin", name:"Catppuccin", dark:{bg:"#1e1e2e",a:["#cba6f7","#89b4fa","#f5c2e7","#fab387"],shot:"pal-catppuccin-dark"}, light:{bg:"#eff1f5",a:["#8839ef","#1e66f5","#ea76cb","#fe640b"],shot:"settings-light"}},
+  {id:"rose", name:"Rosé Pine", dark:{bg:"#232136",a:["#c4a7e7","#9ccfd8","#ea9a97","#eb6f92"],shot:"pal-rose-dark"}, light:{bg:"#faf4ed",a:["#907aa9","#286983","#d7827e","#b4637a"],shot:null}},
+  {id:"tokyo", name:"Tokyo Night", dark:{bg:"#1a1b26",a:["#7aa2f7","#bb9af7","#7dcfff","#ff9e64"],shot:"pal-tokyo-dark"}, light:{bg:"#e1e2e7",a:["#2e7de9","#9854f1","#007197","#b15c00"],shot:"pause-light"}},
+  {id:"kanagawa", name:"Kanagawa", dark:{bg:"#1f1f28",a:["#7e9cd8","#957fb8","#d27e99","#ffa066"],shot:"pal-kanagawa-dark"}, light:{bg:"#f2ecbc",a:["#4d699b","#624c83","#b35b79","#cc6d00"],shot:null}},
+  {id:"everforest", name:"Everforest", dark:{bg:"#2d353b",a:["#a7c080","#83c092","#7fbbb3","#d699b6"],shot:null}, light:{bg:"#fdf6e3",a:["#8da101","#35a77c","#3a94c5","#df69ba"],shot:"pal-everforest-light"}},
+];
+let palIdx = 0, mode = "dark";
+const hex = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16)/255);
+
+/* ---------- WebGL mesh: four drifting colour fields over the base ---------- */
+const canvas = document.getElementById("mesh");
+const gl = canvas.getContext("webgl", {premultipliedAlpha:false, antialias:false});
+let target = {bg:hex("#120a1e"), c:PALS[0].dark.a.map(hex)}, cur = JSON.parse(JSON.stringify(target));
+let mouse = [0.5,0.5], scrollY = 0;
+if (gl) {
+  const vs = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+  const fs = `precision mediump float;uniform vec2 r;uniform float t;uniform vec2 m;uniform float s;uniform vec3 bg;uniform vec3 c0,c1,c2,c3;uniform float light;
+  float f(vec2 uv,vec2 p,float k){return exp(-k*dot(uv-p,uv-p));}
+  void main(){vec2 uv=gl_FragCoord.xy/r;uv.x*=r.x/r.y;float a=r.x/r.y;float T=t*.06;float S=.14*sin(s*.0009);
+    vec2 p0=vec2(a*(.2+.15*sin(T*1.3)),.75+.12*cos(T*1.1)-S);vec2 p1=vec2(a*(.82+.1*cos(T*.9)),.68+.15*sin(T*1.4)-S*.6);
+    vec2 p2=vec2(a*(.55+.2*sin(T*.7+1.)),.25+.12*cos(T*1.2)+S*.4);vec2 p3=vec2(a*(m.x*.4+.3),(1.-m.y)*.5+.25);
+    float k=light>.5?2.2:2.6;vec3 col=bg;
+    col=mix(col,c0,f(uv,p0,k)*.85);col=mix(col,c1,f(uv,p1,k)*.75);col=mix(col,c2,f(uv,p2,k)*.7);col=mix(col,c3,f(uv,p3,k*1.6)*.45);
+    if(light<.5){col*=.82;}else{col=mix(col,vec3(1.),.35);}
+    float v=1.-.35*length(gl_FragCoord.xy/r-.5);gl_FragColor=vec4(col*mix(1.,v,light<.5?1.:.3),1.);}`;
+  const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);return s;};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const U=n=>gl.getUniformLocation(pr,n);const u={r:U("r"),t:U("t"),m:U("m"),s:U("s"),bg:U("bg"),c:[U("c0"),U("c1"),U("c2"),U("c3")],light:U("light")};
+  const size=()=>{const d=Math.min(devicePixelRatio,1.5)*.5;canvas.width=innerWidth*d;canvas.height=innerHeight*d;gl.viewport(0,0,canvas.width,canvas.height);};
+  size();addEventListener("resize",size);
+  const t0=performance.now();
+  const frame=now=>{
+    const lerp=(a,b)=>a+(b-a)*.06;
+    cur.bg=cur.bg.map((v,i)=>lerp(v,target.bg[i]));cur.c=cur.c.map((c,j)=>c.map((v,i)=>lerp(v,target.c[j][i])));
+    gl.uniform2f(u.r,canvas.width,canvas.height);gl.uniform1f(u.t,reduce?0:(now-t0)/1000);gl.uniform2f(u.m,mouse[0],mouse[1]);
+    gl.uniform1f(u.s,scrollY);gl.uniform3fv(u.bg,cur.bg);cur.c.forEach((c,i)=>gl.uniform3fv(u.c[i],c));gl.uniform1f(u.light,mode==="light"?1:0);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+} else { canvas.style.background = "radial-gradient(60% 50% at 20% 20%,#7c5cff55,transparent),radial-gradient(50% 50% at 80% 30%,#ff5ca855,transparent),#120a1e"; }
+addEventListener("pointermove", e => { mouse = [e.clientX/innerWidth, e.clientY/innerHeight]; });
+
+/* ---------- title: runes resolving into the name ---------- */
+(() => {
+  const el = document.getElementById("title"), word = el.textContent, R = "ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ";
+  el.textContent = "";
+  const spans = [...word].map(ch => { const s = document.createElement("span"); s.setAttribute("aria-hidden","true"); s.textContent = ch; el.appendChild(s); return s; });
+  if (reduce) return;
+  spans.forEach((s, i) => {
+    s.classList.add("rune"); s.textContent = R[(i*7) % R.length];
+    const flick = setInterval(() => { s.textContent = R[Math.floor(Math.random()*R.length)]; }, 70);
+    setTimeout(() => { clearInterval(flick); s.textContent = word[i]; s.classList.remove("rune"); }, 450 + i*95);
+  });
+})();
+
+/* ---------- smooth scroll + scroll motion ---------- */
+let lenis = null;
+if (!reduce && !still && window.Lenis) {
+  lenis = new Lenis({lerp:.09, smoothWheel:true});
+  const raf = t => { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
+  lenis.on("scroll", e => { scrollY = e.scroll; if (window.ScrollTrigger) ScrollTrigger.update(); });
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener("click", e => { const t = document.querySelector(a.getAttribute("href")); if (t) { e.preventDefault(); lenis.scrollTo(t, {offset:-20}); } }));
+} else addEventListener("scroll", () => { scrollY = window.scrollY; }, {passive:true});
+
+if (window.gsap && window.ScrollTrigger && !reduce && !still) {
+  gsap.registerPlugin(ScrollTrigger);
+  // Hero window: tilted, then flattens and grows as you scroll into it.
+  gsap.to("#window", {rotateX:0, scale:1, ease:"none", scrollTrigger:{trigger:"#stage", start:"top 85%", end:"top 15%", scrub:true}});
+  // Orbiting chips drift at their own depth.
+  document.querySelectorAll(".orbit").forEach(o => gsap.to(o, {y:-(+o.dataset.depth)*2.4, ease:"none", scrollTrigger:{trigger:"#stage", start:"top bottom", end:"bottom top", scrub:true}}));
+  // Section headings rise in.
+  gsap.utils.toArray("section h2, section .sub, section .kicker").forEach(el => gsap.from(el, {y:40, opacity:0, duration:1, ease:"expo.out", scrollTrigger:{trigger:el, start:"top 88%"}}));
+  gsap.utils.toArray(".screen, .film, .glasslab, .pals, .stat").forEach(el => gsap.from(el, {y:70, opacity:0, scale:.96, duration:1.2, ease:"expo.out", scrollTrigger:{trigger:el, start:"top 90%"}}));
+  // Glass cards: staggered, with a little rotation.
+  gsap.from(".gcard", {y:90, rotate:3, opacity:0, stagger:.12, duration:1.1, ease:"back.out(1.6)", scrollTrigger:{trigger:".glasslab", start:"top 80%"}});
+  // Features: pin the section and slide the track sideways.
+  const mm = gsap.matchMedia();
+  mm.add("(min-width: 761px)", () => {
+    const track = document.getElementById("track");
+    const dist = () => track.scrollWidth - innerWidth;
+    gsap.to(track, {x:() => -dist(), ease:"none", scrollTrigger:{trigger:"#features", start:"top top", end:() => "+=" + dist(), pin:true, scrub:1, invalidateOnRefresh:true}});
+    gsap.utils.toArray(".fcard").forEach((c, i) => gsap.from(c, {y:60 + i*10, opacity:0, duration:.9, ease:"expo.out", scrollTrigger:{trigger:"#features", start:"top 70%"}}));
+  });
+  // Roadmap: the line draws as you read, steps light up as the line passes them.
+  gsap.to("#fill", {height:"100%", ease:"none", scrollTrigger:{trigger:"#road", start:"top 70%", end:"bottom 60%", scrub:true}});
+  document.querySelectorAll(".step").forEach(s => ScrollTrigger.create({trigger:s, start:"top 62%", onEnter:() => s.classList.add("lit"), onLeaveBack:() => s.classList.remove("lit")}));
+  // Final heading: letters spread out of a blur.
+  gsap.from(".final h2", {letterSpacing:"-.08em", opacity:0, filter:"blur(14px)", duration:1.6, ease:"expo.out", scrollTrigger:{trigger:".final", start:"top 75%"}});
+  // Stats count up.
+  document.querySelectorAll("[data-count]").forEach(b => { const n = +b.dataset.count, o = {v:0}; gsap.to(o, {v:n, duration:1.4, ease:"power2.out", scrollTrigger:{trigger:b, start:"top 90%"}, onUpdate:() => b.textContent = Math.round(o.v)}); });
+}
+
+/* hero window follows the pointer a little */
+const win = document.getElementById("window");
+if (!reduce) addEventListener("pointermove", e => {
+  const x = e.clientX/innerWidth - .5, y = e.clientY/innerHeight - .5;
+  win.style.translate = `${x*-18}px ${y*-10}px`;
+  document.querySelectorAll(".orbit").forEach(o => { const d = +o.dataset.depth/40; o.style.translate = `${x*30*d}px ${y*24*d}px`; });
+});
+
+/* ---------- crossfading screenshots ---------- */
+function swap(aId, bId, name) {
+  const a = document.getElementById(aId), b = document.getElementById(bId);
+  const src = `assets/${name}.webp`;
+  if (a.getAttribute("src") === src) return;
+  b.src = src; b.style.opacity = 0; b.style.transform = "scale(1.02)";
+  b.onload = () => { requestAnimationFrame(() => { b.style.opacity = 1; b.style.transform = "scale(1)"; }); setTimeout(() => { a.src = src; b.style.opacity = 0; b.style.transform = "scale(1.02)"; }, 560); };
+}
+
+/* ---------- tab bar ---------- */
+const bar = document.getElementById("tabbar"), drop = document.getElementById("drop");
+function placeDrop() { const on = bar.querySelector("button.on"); drop.style.width = on.offsetWidth + "px"; drop.style.transform = `translateX(${on.offsetLeft - 6}px)`; }
+bar.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+  bar.querySelectorAll("button").forEach(b => { b.classList.toggle("on", b === btn); b.setAttribute("aria-selected", b === btn); });
+  placeDrop(); swap("shotA", "shotB", btn.dataset.shot);
+}));
+addEventListener("resize", placeDrop); document.fonts.ready.then(placeDrop); placeDrop();
+
+/* ---------- palettes ---------- */
+const palBox = document.getElementById("pals");
+palBox.innerHTML = PALS.map((p, i) => `<button class="pal glass" data-i="${i}" aria-pressed="${i === 0}">
+  <span class="sw"><span style="background:${p.light.bg}">${p.light.a.slice(0,3).map(c => `<i style="background:${c}"></i>`).join("")}</span><span style="background:${p.dark.bg}">${p.dark.a.slice(0,3).map(c => `<i style="background:${c}"></i>`).join("")}</span></span><b>${p.name}</b></button>`).join("");
+function applyPalette() {
+  const p = PALS[palIdx], v = p[mode], root = document.documentElement;
+  root.classList.toggle("light", mode === "light");
+  root.style.setProperty("--bg", v.bg); ["--a0","--a1","--a2","--a3"].forEach((k, i) => root.style.setProperty(k, v.a[i]));
+  target = {bg:hex(v.bg), c:v.a.map(hex)};
+  document.querySelectorAll(".pal").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === palIdx));
+  document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.m === mode));
+  const shot = v.shot || p[mode === "dark" ? "light" : "dark"].shot || "hero-dark";
+  swap("palA", "palB", shot);
+  document.getElementById("modeicon").setAttribute("d", mode === "dark" ? "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" : "M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z");
+  document.getElementById("heroShot").src = `assets/${mode === "light" ? "hero-light" : "hero-dark"}.webp`;
+}
+palBox.querySelectorAll(".pal").forEach(b => b.addEventListener("click", () => { palIdx = +b.dataset.i; applyPalette(); }));
+document.querySelectorAll("#modes button").forEach(b => b.addEventListener("click", () => { mode = b.dataset.m; applyPalette(); }));
+document.getElementById("mode").addEventListener("click", () => { mode = mode === "dark" ? "light" : "dark"; applyPalette(); });
+
+/* ---------- video plays only while visible ---------- */
+const film = document.getElementById("film");
+new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) film.play().catch(() => {}); else film.pause(); }), {threshold:.35}).observe(film);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Build output
+target/
+
+# Local scratch: screenshots and captures made while developing (may show a real process list)
+shots/
+*.old.exe
+*.old2.exe
+
+# Editor and OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Release staging
+dist/

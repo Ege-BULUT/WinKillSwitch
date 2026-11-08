@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WinKillSwitch Yayın Önizlemesi</title>
+<link rel="stylesheet" id="md-light" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css">
+<link rel="stylesheet" id="md-dark" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-dark.min.css" disabled>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+/* A review console: switch between the README as GitHub would show it and the landing page in a
+   device frame. GitHub's own palette for the README view so the preview reads like the real thing. */
+:root{--bg:#f6f8fa;--panel:#ffffff;--ink:#1f2328;--muted:#59636e;--line:#d1d9e0;--accent:#7c5cff;--chrome:#ffffff}
+:root.dark{--bg:#010409;--panel:#0d1117;--ink:#f0f6fc;--muted:#9198a1;--line:#3d444d;--chrome:#0d1117}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;font-size:14px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;padding:12px 20px;background:var(--chrome);border-bottom:1px solid var(--line)}
+.top h1{font-size:15px;margin:0;display:flex;align-items:center;gap:8px}
+.top h1 i{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#7c5cff,#ff5ca8);display:inline-block}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+.seg button{padding:6px 14px;border-radius:6px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.spacer{flex:1}
+.status{font-size:12.5px;color:var(--muted)}
+.status b{color:#d29922}
+
+/* README view: a GitHub repository page */
+.repo{max-width:1012px;margin:0 auto;padding:24px 16px 60px}
+.crumb{display:flex;align-items:center;gap:8px;font-size:20px;margin-bottom:16px}
+.crumb a{color:#4493f8;text-decoration:none}
+.crumb span.pub{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--muted);font-weight:500}
+.filebox{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.filebox .head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.markdown-body{padding:32px;background:transparent!important}
+.markdown-body .alert{padding:8px 16px;margin-bottom:16px;border-left:.25em solid;border-radius:0}
+.markdown-body .alert p:first-child{font-weight:600;display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.alert.note{border-color:#4493f8}.alert.note p:first-child{color:#4493f8}
+.alert.tip{border-color:#3fb950}.alert.tip p:first-child{color:#3fb950}
+.alert.important{border-color:#ab7df8}.alert.important p:first-child{color:#ab7df8}
+.alert.warning{border-color:#d29922}.alert.warning p:first-child{color:#d29922}
+
+/* landing view: device frame */
+.landing{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px;height:calc(100% - 59px)}
+.frame{flex:1;width:100%;max-width:100%;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.25);transition:width .45s cubic-bezier(.3,1.2,.4,1)}
+.frame iframe{width:100%;height:100%;border:0;display:block}
+.frame.tablet{width:834px}.frame.mobile{width:390px}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.tools a{color:#4493f8;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1><i></i>WinKillSwitch · yayın önizlemesi</h1>
+  <div class="seg" role="group" aria-label="Görünüm">
+    <button data-v="readme" aria-pressed="true">README</button>
+    <button data-v="landing" aria-pressed="false">Landing page</button>
+  </div>
+  <div class="seg" role="group" aria-label="GitHub teması" id="gh">
+    <button data-t="light" aria-pressed="true">GitHub açık</button>
+    <button data-t="dark" aria-pressed="false">GitHub koyu</button>
+  </div>
+  <span class="spacer"></span>
+  <span class="status"><b>Henüz yayınlanmadı.</b> Onaydan sonra github.com/Ege-BULUT/WinKillSwitch ve winkillswitch.vercel.app</span>
+</header>
+
+<main id="v-readme" class="repo">
+  <div class="crumb"><a href="#">Ege-BULUT</a> / <a href="#"><b>WinKillSwitch</b></a> <span class="pub">Public</span></div>
+  <div class="filebox">
+    <div class="head">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/></svg>
+      README
+    </div>
+    <article class="markdown-body" id="md"></article>
+  </div>
+</main>
+
+<main id="v-landing" class="landing" hidden>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="Cihaz">
+      <button data-d="desktop" aria-pressed="true">Masaüstü</button>
+      <button data-d="tablet" aria-pressed="false">Tablet</button>
+      <button data-d="mobile" aria-pressed="false">Telefon</button>
+    </div>
+    <a href="site/index.html" target="_blank" rel="noopener">Yeni sekmede aç ↗</a>
+  </div>
+  <div class="frame" id="frame"><iframe id="site" title="Landing page önizlemesi" loading="lazy"></iframe></div>
+</main>
+
+<script id="readme" type="text/markdown">/*__README__*/</script>
+<script>
+// README: render with GitHub-flavoured markdown, then turn > [!NOTE] style quotes into GitHub alerts.
+const src = document.getElementById("readme").textContent;
+const md = document.getElementById("md");
+md.innerHTML = marked.parse(src, {gfm: true});
+md.querySelectorAll("blockquote").forEach(q => {
+  const p = q.querySelector("p"); if (!p) return;
+  const m = p.innerHTML.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/);
+  if (!m) return;
+  const kind = m[1].toLowerCase();
+  p.innerHTML = p.innerHTML.slice(m[0].length);
+  const title = document.createElement("p");
+  title.textContent = {note: "Note", tip: "Tip", important: "Important", warning: "Warning", caution: "Caution"}[kind];
+  const div = document.createElement("div"); div.className = "alert " + kind;
+  div.append(title, ...q.childNodes); q.replaceWith(div);
+});
+// Anchor links inside the README, as GitHub generates them.
+md.querySelectorAll("h1,h2,h3").forEach(h => { h.id = h.textContent.trim().toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-"); });
+
+const views = {readme: document.getElementById("v-readme"), landing: document.getElementById("v-landing")};
+document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  for (const [k, el] of Object.entries(views)) el.hidden = k !== b.dataset.v;
+  document.getElementById("gh").hidden = b.dataset.v !== "readme";
+  const f = document.getElementById("site"); if (b.dataset.v === "landing" && !f.src) f.src = "site/index.html";
+  try { localStorage.setItem("wks-preview-view", b.dataset.v); } catch (e) {}
+});
+document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
+  const dark = b.dataset.t === "dark";
+  document.querySelectorAll("[data-t]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  document.documentElement.classList.toggle("dark", dark);
+  document.getElementById("md-light").disabled = dark; document.getElementById("md-dark").disabled = !dark;
+});
+document.querySelectorAll("[data-d]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-d]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  document.getElementById("frame").className = "frame " + b.dataset.d;
+});
+try { const v = localStorage.getItem("wks-preview-view"); if (v) document.querySelector(`[data-v="${v}"]`)?.click(); } catch (e) {}
+</script>
+</body>
+</html>
