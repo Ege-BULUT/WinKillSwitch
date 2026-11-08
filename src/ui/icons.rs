@@ -74,3 +74,5 @@ icon16!(CUBE, "wks-cube", r#"<path d="M8 2.2L13 5V11L8 13.8L3 11V5Z" stroke="cur
 icon16!(REFRESH, "wks-refresh", r#"<path d="M12.8 6.5A5 5 0 1 0 13 9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/><path d="M13.2 3.2V6.8H9.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>"#);
 icon16!(SEARCH, "wks-search", r#"<circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M10 10L13.2 13.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>"#);
 icon16!(CHECK, "wks-check", r#"<path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>"#);
+
+icon16!(TARGET, "wks-target", r#"<circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><path d="M8 1.5V4M8 12V14.5M1.5 8H4M12 8H14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>"#);

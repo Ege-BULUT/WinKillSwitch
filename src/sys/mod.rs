@@ -2,6 +2,7 @@
 pub mod autostart;
 pub mod cleanup;
 pub mod elevate;
+pub mod finder;
 pub mod gpu;
 pub mod guard;
 pub mod info;

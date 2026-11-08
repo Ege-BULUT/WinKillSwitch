@@ -2,7 +2,7 @@
 
 use std::borrow::Cow;
 
-use rune::{Cx, El, col, el, row, text};
+use rune::{Cx, El, Phase, col, el, icon, row, text};
 use rune_kit::{Button, ButtonVariant, Cell, ControlSize, MenuItem, Table, TableColumn, TextInput, context_menu};
 
 use crate::app::App;
@@ -99,7 +99,7 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
         .center_y()
         .justify_between()
         .gaps(10.0, 20.0)
-        .child(row().grow(1.0).min_w(200.0).max_w(380.0).child(search.w_full()))
+        .child(row().grow(1.0).min_w(240.0).max_w(560.0).gap(8.0).center_y().child(finder(s, l)).child(row().grow(1.0).min_w(160.0).child(search.w_full())))
         .child(stats);
 
     col()
@@ -207,4 +207,62 @@ fn header_menu(s: &App, l: &Look, layer: &mut Vec<El>, frame: El) -> El {
         .w_full()
         .grow(1.0)
         .min_h(0.0)
+}
+
+/// The find-by-window target: press it, drag onto any window, release to select its process.
+fn finder(s: &App, l: &Look) -> El {
+    let on = s.finding;
+    let target = row()
+        .key("find-window")
+        .size(38.0, 38.0)
+        .radius(12.0)
+        .center()
+        .fill(if on { l.accent.alpha(0.25) } else { l.text.alpha(0.06) })
+        .border(1.0, if on { l.accent } else { l.line })
+        .cursor(rune::Cursor::Crosshair)
+        .role("button")
+        .label("Find a process by dragging onto its window")
+        .help("Drag onto any window to find its process")
+        .child(icon(&icons::TARGET, 18.0).color(if on { l.accent } else { l.muted }))
+        .on_drag(|s: &mut App, d: &mut rune::Drag, tx: &mut rune::Tx| match d.phase {
+            Phase::Down => {
+                s.finding = true;
+                s.find_hover = None;
+            }
+            Phase::Move => s.find_hover = crate::sys::finder::under_cursor(),
+            Phase::Up => {
+                s.finding = false;
+                let hit = crate::sys::finder::under_cursor();
+                s.find_hover = None;
+                if let Some(t) = hit {
+                    crate::actions::found_window(s, t, tx);
+                }
+            }
+        });
+    // The target keeps the same parent whether or not the label shows: the drag's pointer
+    // capture follows the element's place in the tree, so moving it would drop the release.
+    let wrap = row().key("find-wrap").gap(8.0).center_y().child(target);
+    if !on {
+        return wrap;
+    }
+    // While dragging, say what is under the pointer.
+    let label = match &s.find_hover {
+        Some(t) if t.pid == std::process::id() => "Over WinKillSwitch".to_string(),
+        Some(t) => {
+            let name = s.snap.get(t.pid).map(|p| p.name.clone()).unwrap_or_else(|| format!("PID {}", t.pid));
+            if t.title.is_empty() { format!("Over {name}") } else { format!("Over {name} \u{00b7} {}", t.title) }
+        }
+        None => "Drag onto any window".to_string(),
+    };
+    wrap.child(
+            text(label)
+                .font(l.kit.ty.small_medium)
+                .color(l.text)
+                .truncate()
+                .max_w(230.0)
+                .px(10.0)
+                .py(6.0)
+                .radius(10.0)
+                .fill(l.accent.alpha(0.16)),
+        )
 }

@@ -1,0 +1,4 @@
+{"events": [
+  {"t": 0.5, "type": "drag", "key": "find-window", "dx": 520, "dy": 300, "dur": 1.2},
+  {"t": 3.0, "type": "mark", "name": "end"}
+]}

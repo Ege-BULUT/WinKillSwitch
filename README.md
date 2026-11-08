@@ -46,6 +46,7 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Sortable, resizable, virtualised table with multi selection and keyboard navigation.
 - Right click the header to choose columns: type, status, publisher, description, PID, command line, CPU, memory, disk, **GPU** and **GPU engine**. Your choice is saved.
 - Per process GPU use from the same GPU Engine counters Task Manager reads, with the busiest engine (3D, video decode, copy and so on).
+- **Find by window**: drag the target next to the search box onto any window. While you drag it names the process underneath; let go and that process is selected and scrolled into view.
 
 **Memory cleaner**
 - A ring gauge of memory in use, cached and free, with a two minute history.
@@ -191,7 +192,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step (v0.3)
 - [x] "What is this process?" card that also explains why access is denied (v0.3.1)
 - [x] Column picker on header right click, including per process GPU usage (v0.3.2)
-- [ ] Find a process by pointing at its window
+- [x] Find a process by pointing at its window (v0.3.3)
 - [ ] Global hotkey and quick palette
 - [ ] Process tree view
 - [ ] Find out which process is locking a file

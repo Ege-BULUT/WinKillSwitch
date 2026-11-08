@@ -108,6 +108,9 @@ pub struct App {
     pub columns: Vec<String>,
     /// Where the column picker opened, while it is open.
     pub column_menu: Option<rune::PointerPress>,
+    /// Dragging the find-by-window target, and what it is over right now.
+    pub finding: bool,
+    pub find_hover: Option<crate::sys::finder::Target>,
     /// Open the info sheet for this pid once it shows up in a sample (headless scenes).
     pub pending_info: Option<Pid>,
 
@@ -158,6 +161,8 @@ impl App {
             info: None,
             columns: saved.columns.clone(),
             column_menu: None,
+            finding: false,
+            find_hover: None,
             pending_info: None,
             disk: DiskState { phase: DiskPhase::Idle, items: Vec::new(), drive: sys::cleanup::system_drive(), results: Vec::new() },
             appearance: saved.appearance.clone(),
@@ -253,6 +258,22 @@ impl App {
         self.persist();
     }
 
+    /// Make `pid` the active row: clear the search so it is in the list, then select it.
+    /// Returns false when the process is not in the current sample (yet).
+    pub fn select_pid(&mut self, pid: Pid) -> bool {
+        if !self.search.is_empty() {
+            self.search.clear();
+            self.search_edit = rune::TextEdit::new("");
+            self.rebuild_rows();
+        }
+        if !self.view_rows.contains(&pid) {
+            return false;
+        }
+        self.active_pid = Some(pid);
+        self.table.select(pid.to_string());
+        true
+    }
+
     /// Open the "about this process" sheet and start inspecting it.
     pub fn open_info(&mut self, pid: Pid) {
         let Some(p) = self.snap.get(pid) else { return };
@@ -304,5 +325,47 @@ impl App {
     /// The pids currently checked in the table.
     pub fn selected_pids(&self) -> Vec<Pid> {
         self.table.selected().filter_map(|s| s.parse::<Pid>().ok()).collect::<HashSet<_>>().into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn demo() -> App {
+        let mut a = App::new();
+        crate::demo::apply(&mut a); // demo mode: nothing is ever saved
+        a
+    }
+
+    #[test]
+    fn select_pid_clears_the_search_and_selects() {
+        let mut a = demo();
+        let pid = a.snap.procs.iter().find(|p| p.name == "Spotify.exe").unwrap().pid;
+        a.search = "zzz-nothing".into();
+        a.rebuild_rows();
+        assert!(a.view_rows.is_empty());
+        assert!(a.select_pid(pid));
+        assert!(a.search.is_empty(), "the search is cleared so the row can show");
+        assert_eq!(a.active_pid, Some(pid));
+        assert!(a.table.is_selected(&pid.to_string()));
+    }
+
+    #[test]
+    fn select_pid_rejects_unknown_processes() {
+        let mut a = demo();
+        assert!(!a.select_pid(4_000_000));
+    }
+
+    #[test]
+    fn columns_toggle_and_reset() {
+        let mut a = demo();
+        assert!(a.column_shown("gpu") && !a.column_shown("cmd"));
+        a.toggle_column("cmd");
+        a.toggle_column("gpu");
+        assert!(a.column_shown("cmd") && !a.column_shown("gpu"));
+        assert!(a.column_shown("name"), "name always shows");
+        a.columns.clear();
+        assert!(a.column_shown("gpu"), "empty means the default set");
     }
 }

@@ -249,3 +249,19 @@ pub fn confirm_delete_group(app: &mut App, id: u64) {
         action: ConfirmAction::DeleteGroup { id },
     });
 }
+
+/// The find-by-window drag ended over a window.
+pub fn found_window(app: &mut App, t: crate::sys::finder::Target, tx: &mut rune::Tx) {
+    if t.pid == std::process::id() {
+        app.toast("That window is WinKillSwitch itself", None, false);
+        return;
+    }
+    if app.select_pid(t.pid) {
+        app.table.reveal(t.pid.to_string(), tx);
+        let name = app.snap.get(t.pid).map(|p| p.name.clone()).unwrap_or_default();
+        app.toast(format!("Found {name}"), (!t.title.is_empty()).then(|| t.title.clone()), false);
+    } else {
+        app.toast(format!("PID {} is not in the list yet", t.pid), Some("Try again in a moment.".into()), false);
+        app.refresh_now();
+    }
+}
