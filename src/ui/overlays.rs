@@ -65,6 +65,12 @@ pub fn toasts(s: &App, k: &Kit, layer: &mut Vec<El>) {
         if t.danger {
             toast = toast.icon(k, k.glyph.circle_x);
         }
+        if let Some(pid) = t.pid {
+            toast = toast.action(k, "Show", true, move |s: &mut App, tx| {
+                s.dismiss_toast(id);
+                crate::ui::palette::run(s, crate::ui::palette::Action::Process(pid), tx);
+            });
+        }
         region = region.toast(toast.build(k));
     }
     layer.push(region.build(k));

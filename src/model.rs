@@ -202,6 +202,9 @@ pub struct Saved {
     pub columns: Vec<String>,
     #[serde(default)]
     pub appearance: Appearance,
+    /// New-process alert rules.
+    #[serde(default)]
+    pub alerts: crate::sys::alerts::Alerts,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

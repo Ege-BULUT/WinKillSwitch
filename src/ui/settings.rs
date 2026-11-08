@@ -1,7 +1,7 @@
 //! The Settings tab: palette, light/dark, accent and glass. Every change applies at once and is saved.
 
 use rune::{Cx, El, ScrollSpec, col, el, row, text};
-use rune_kit::{SegmentedControl, Switch};
+use rune_kit::{Button, ButtonVariant, ControlSize, SegmentedControl, Switch, TextInput};
 
 use crate::app::App;
 use crate::model::{GlassStyle, ThemeMode};
@@ -19,6 +19,109 @@ fn section(l: &Look, title: &str, hint: &str, body: El) -> El {
                 .child(text(hint.to_string()).font(l.kit.ty.small).color(l.muted).wrap()),
         )
         .child(body)
+}
+
+fn add_rule(s: &mut App) {
+    let rule = s.alert_edit.text.trim().to_string();
+    if !rule.is_empty() && !s.alerts.watch.iter().any(|w| w.eq_ignore_ascii_case(&rule)) {
+        s.alerts.watch.push(rule);
+        s.persist();
+    }
+    s.alert_edit = rune::TextEdit::new("");
+    s.alert_edit.focused = true;
+}
+
+fn alerts(s: &App, l: &Look) -> El {
+    let k = &l.kit;
+    let risky = row()
+        .w_full()
+        .gap(16.0)
+        .center_y()
+        .child(
+            col()
+                .grow(1.0)
+                .min_w(0.0)
+                .gap(2.0)
+                .child(text("Programs started from Downloads or Temp").font(k.ty.ui_medium).color(l.text))
+                .child(text("Installers and downloaded tools run from there; so does most malware.").font(k.ty.small).color(l.muted).wrap()),
+        )
+        .child(
+            Switch::new(s.alerts.risky_folders)
+                .label("Alert for programs started from Downloads or Temp")
+                .hide_label()
+                .on_toggle(|s: &mut App| {
+                    s.alerts.risky_folders = !s.alerts.risky_folders;
+                    s.persist();
+                })
+                .build(k),
+        );
+    let input = TextInput::new(&s.alert_edit)
+        .placeholder("Process name, like steam* or discord")
+        .width(None)
+        .on_edit(|s: &mut App| &mut s.alert_edit)
+        .on_submit(|s: &mut App, _| add_rule(s))
+        .build(k)
+        .key("alert-input");
+    let add = Button::new("Watch")
+        .variant(ButtonVariant::Outline)
+        .control_size(ControlSize::Regular)
+        .on_press(add_rule)
+        .build(k)
+        .key("alert-add");
+    let mut chips = row().w_full().gap(8.0).flex_wrap();
+    for (i, w) in s.alerts.watch.iter().enumerate() {
+        chips = chips.child(
+            row()
+                .key(format!("alert-rule-{i}"))
+                .gap(6.0)
+                .center_y()
+                .pl(12.0)
+                .pr(4.0)
+                .py(4.0)
+                .radius(999.0)
+                .fill(l.accent.alpha(0.14))
+                .child(text(w.clone()).font(k.ty.mono).color(l.text))
+                .child(
+                    row()
+                        .key(format!("alert-remove-{i}"))
+                        .size(22.0, 22.0)
+                        .radius(11.0)
+                        .center()
+                        .cursor(rune::Cursor::Pointer)
+                        .hover(l.text.alpha(0.1))
+                        .role("button")
+                        .label(format!("Stop watching {w}"))
+                        .on_press(move |s: &mut App| {
+                            if i < s.alerts.watch.len() {
+                                s.alerts.watch.remove(i);
+                                s.persist();
+                            }
+                        })
+                        .child(text("×").font(k.ty.ui).color(l.muted)),
+                ),
+        );
+    }
+    let watch = col()
+        .w_full()
+        .gap(10.0)
+        .child(
+            col()
+                .gap(2.0)
+                .child(text("Programs to watch").font(k.ty.ui_medium).color(l.text))
+                .child(text("Tell me whenever one of these starts. Use * as a wildcard.").font(k.ty.small).color(l.muted).wrap()),
+        )
+        .child(row().w_full().gap(8.0).center_y().child(el().grow(1.0).min_w(0.0).child(input)).child(add))
+        .child(if s.alerts.watch.is_empty() { text("Nothing watched yet.").font(k.ty.small).color(l.muted) } else { chips });
+    col()
+        .w_full()
+        .max_w(560.0)
+        .gap(14.0)
+        .padding(12.0)
+        .radius(12.0)
+        .fill(l.card)
+        .child(risky)
+        .child(el().w_full().h(1.0).fill(l.line))
+        .child(watch)
 }
 
 /// A palette card: its light and dark sides, each with the variant's accents.
@@ -207,6 +310,8 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
                 .build(k),
         );
 
+    let alerts = alerts(s, l);
+
     let body = col()
         .key("settings-body")
         .w_full()
@@ -227,7 +332,8 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
             "Liquid glass bends light at its edges like the tab bar, fluted glass has vertical ribs, frosted glass is the calmest.",
             col().gap(12.0).child(row().gap(12.0).flex_wrap().child(glass).child(strength)).child(animated),
         ))
-        .child(section(l, "Shortcuts", "Reach anything by typing its name.", hotkey));
+        .child(section(l, "Shortcuts", "Reach anything by typing its name.", hotkey))
+        .child(section(l, "Alerts", "A quiet note in the corner when a new process starts that you care about.", alerts));
 
     col().w_full().h_full().min_h(0.0).child(body.scroll(ScrollSpec { stick_bottom: false }).grow(1.0).min_h(0.0))
 }

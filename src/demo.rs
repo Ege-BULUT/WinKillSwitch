@@ -193,6 +193,12 @@ pub fn apply(s: &mut App) {
     if let Ok(cols) = std::env::var("WKS_COLUMNS") {
         s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();
     }
+    s.alerts = crate::sys::alerts::Alerts { risky_folders: true, watch: vec!["steam*".into(), "discord".into()] };
+    if std::env::var("WKS_ALERT").is_ok() {
+        if let Some(p) = s.snap.procs.iter().find(|p| p.name == "Discord.exe").map(|p| p.pid) {
+            s.toast_about(p, "Discord.exe started", "Matches your rule \"discord\"".into());
+        }
+    }
     if std::env::var("WKS_DIAG").is_ok() {
         crate::ui::diagnose::start(s);
     }

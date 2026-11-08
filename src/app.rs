@@ -86,6 +86,8 @@ pub struct Toast {
     pub detail: Option<String>,
     pub danger: bool,
     pub born: f64,
+    /// A process the toast is about; it gets a Show button.
+    pub pid: Option<Pid>,
 }
 
 pub struct App {
@@ -143,6 +145,12 @@ pub struct App {
     pub confirm: Option<Confirm>,
     pub toasts: Vec<Toast>,
     pub toast_seq: u64,
+    /// New-process alert rules, what has been seen, the folders that count as risky, and the
+    /// rule being typed in Settings.
+    pub alerts: crate::sys::alerts::Alerts,
+    pub alert_watch: crate::sys::alerts::Watcher,
+    pub alert_roots: Vec<String>,
+    pub alert_edit: rune::TextEdit,
 
     pub elevated: bool,
     pub clock: f64,
@@ -197,6 +205,10 @@ impl App {
             confirm: None,
             toasts: Vec::new(),
             toast_seq: 0,
+            alerts: saved.alerts.clone(),
+            alert_watch: Default::default(),
+            alert_roots: crate::sys::alerts::risky_roots(),
+            alert_edit: rune::TextEdit::new(""),
             elevated: sys::elevate::is_elevated(),
             clock: 0.0,
             last_sample: -10.0,
@@ -209,7 +221,7 @@ impl App {
         if self.demo {
             return; // never write the made-up demo machine over the user's saved state
         }
-        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: self.columns.clone(), appearance: self.appearance.clone() };
+        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: self.columns.clone(), appearance: self.appearance.clone(), alerts: self.alerts.clone() };
         if let Err(e) = store::save(&saved) {
             eprintln!("winkillswitch: could not save state: {e}");
         }
@@ -233,9 +245,17 @@ impl App {
 
     pub fn toast(&mut self, title: impl Into<String>, detail: Option<String>, danger: bool) {
         self.toast_seq += 1;
-        self.toasts.push(Toast { id: self.toast_seq, title: title.into(), detail, danger, born: self.clock });
+        self.toasts.push(Toast { id: self.toast_seq, title: title.into(), detail, danger, born: self.clock, pid: None });
         if self.toasts.len() > 4 {
             self.toasts.remove(0);
+        }
+    }
+
+    /// A toast about one process, with a Show button.
+    pub fn toast_about(&mut self, pid: Pid, title: impl Into<String>, detail: String) {
+        self.toast(title, Some(detail), false);
+        if let Some(t) = self.toasts.last_mut() {
+            t.pid = Some(pid);
         }
     }
 
@@ -243,10 +263,10 @@ impl App {
         self.toasts.retain(|t| t.id != id);
     }
 
-    /// Drop toasts older than six seconds.
+    /// Drop toasts older than six seconds (twelve for one with a Show button).
     pub fn expire_toasts(&mut self) {
         let now = self.clock;
-        self.toasts.retain(|t| now - t.born < 6.0);
+        self.toasts.retain(|t| now - t.born < if t.pid.is_some() { 12.0 } else { 6.0 });
     }
 
     pub fn send(&self, c: Cmd) {

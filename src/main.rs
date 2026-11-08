@@ -38,6 +38,11 @@ fn handle(s: &mut App, m: Msg) {
             }
             s.record_mem(mem);
             s.rebuild_rows();
+            let hits: Vec<(model::Pid, String, String)> =
+                s.alert_watch.check(&s.alerts, &s.alert_roots, &s.snap).into_iter().map(|(p, why)| (p.pid, p.name.clone(), why)).collect();
+            for (pid, name, why) in hits {
+                s.toast_about(pid, format!("{name} started"), why);
+            }
             if let Some(pid) = s.pending_info.take() {
                 s.open_info(pid);
             }
@@ -219,6 +224,10 @@ fn main() {
 
 fn init() -> App {
     let mut app = App::new();
+    // Test hook: watch one more name for this run only (not saved unless a rule is edited).
+    if let Ok(rule) = std::env::var("WKS_WATCH") {
+        app.alerts.watch.push(rule);
+    }
     app.rebuild_rows();
     app
 }

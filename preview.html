@@ -161,6 +161,10 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - One button (on the Clean tab, or in the quick palette) watches the machine for about five seconds, then answers in plain words: processor, memory, disk space, disk activity, graphics and uptime, worst first.
 - It names the process behind a problem, averaged over the samples so a one-off spike is not blamed, and puts the fix one click away: **Show it**, **Clean memory** or **Analyze disk**.
 
+**New process alerts**
+- In Settings, list the programs you want to hear about (wildcards work: `steam*`) and get a small note in the corner when one starts, with **Show** one click away.
+- Optionally get the same note for anything that starts from Downloads or a temporary folder, where installers and most malware run from. Off by default, so nothing nags you.
+
 **Who is using this file?**
 - Drop a file or folder anywhere on the window (or use the quick palette) to see every app and service holding it open, through the same Restart Manager API PowerToys File Locksmith uses.
 - Each holder shows its app name, process, PID and type, with **Details** one click away. Folders are checked file by file, up to 2,000 files.
@@ -314,7 +318,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Process tree view (v0.3.5)
 - [x] Find out which process is locking a file (v0.3.6)
 - [x] "Why is my PC slow?" one click diagnosis (v0.3.7)
-- [ ] Notifications when new processes start, by rule
+- [x] Notifications when new processes start, by rule (v0.3.8)
 - [ ] CPU and memory caps per process or group
 - [ ] Wider autostart coverage
 - [ ] Per process network traffic

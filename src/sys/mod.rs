@@ -7,6 +7,7 @@ pub mod gpu;
 pub mod guard;
 pub mod hotkey;
 pub mod info;
+pub mod alerts;
 pub mod diagnose;
 pub mod kill;
 pub mod locks;
