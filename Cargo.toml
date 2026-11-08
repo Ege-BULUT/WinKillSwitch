@@ -1,6 +1,6 @@
 [package]
 name = "winkillswitch"
-version = "0.3.10"
+version = "0.3.11"
 edition = "2024"
 license = "MIT"
 description = "A sleek Windows process manager: kill all related, groups and PauseSwitch autostart control."
@@ -23,6 +23,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_Security_WinTrust",
     "Win32_System_Console",
     "Win32_Storage_FileSystem",
+    "Win32_System_Diagnostics_Etw",
     "Win32_System_JobObjects",
     "Win32_System_Memory",
     "Win32_System_Performance",
@@ -30,6 +31,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_RestartManager",
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
+    "Win32_System_Time",
     "Win32_System_Services",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_Shell",

@@ -61,6 +61,7 @@ pub fn apply(s: &mut App) {
                 start: 0,
                 disk: [12_400_000u64, 3_100_000, 820_000, 410_000][i % 4] / (1 + i as u64 / 4),
                 gpu: [9.8f32, 4.1, 0.6, 2.3, 1.2, 6.5, 0.0, 0.4, 3.3][i % 9] / (1.0 + i as f32 / 9.0),
+                net: [2_400_000u64, 0, 860_000, 0, 120_000, 0, 0, 45_000, 0, 0, 9_000][i % 11],
                 gpu_engine: ["3D", "3D", "Video Decode", "3D", "Copy", "3D", "", "3D", "Video Decode"][i % 9].to_string(),
                 status: "Running",
                 kind,

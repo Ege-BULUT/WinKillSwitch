@@ -25,7 +25,7 @@ const fn flex(id: &'static str, title: &'static str, min: f32) -> Col {
 }
 
 /// Every column, in display order. "name" is always shown.
-pub const ALL: [Col; 12] = [
+pub const ALL: [Col; 13] = [
     flex("name", "Name", 180.0),
     fixed("type", "Type", 130.0, 90.0, false),
     fixed("status", "Status", 90.0, 70.0, false),
@@ -36,11 +36,12 @@ pub const ALL: [Col; 12] = [
     fixed("cpu", "CPU", 72.0, 56.0, true),
     fixed("mem", "Memory", 92.0, 72.0, true),
     fixed("disk", "Disk", 92.0, 72.0, true),
+    fixed("net", "Network", 96.0, 72.0, true),
     fixed("gpu", "GPU", 68.0, 56.0, true),
     fixed("engine", "GPU engine", 110.0, 80.0, false),
 ];
 
-pub const DEFAULT: [&str; 6] = ["name", "pid", "cpu", "mem", "disk", "gpu"];
+pub const DEFAULT: [&str; 7] = ["name", "pid", "cpu", "mem", "disk", "net", "gpu"];
 
 pub fn align(c: &Col) -> Align {
     if c.end { Align::End } else { Align::Start }
@@ -49,6 +50,15 @@ pub fn align(c: &Col) -> Align {
 /// Disk rate, compact: "1.2 MB/s", or "0 MB/s" when idle.
 pub fn rate(b: u64) -> String {
     if b < 1024 * 100 { "0 MB/s".into() } else { format!("{:.1} MB/s", b as f64 / 1_048_576.0) }
+}
+
+/// Network rate in megabits per second, the unit connections are sold in.
+pub fn net(b: u64) -> String {
+    let mbps = b as f64 * 8.0 / 1_000_000.0;
+    if b == 0 && !crate::sys::net::running() {
+        // Not measured: per-process network needs administrator rights.
+        "\u{2014}".into()
+    } else if b == 0 { "0 Mbps".into() } else if mbps < 0.1 { "0.1 Mbps".into() } else { format!("{mbps:.1} Mbps") }
 }
 
 /// The text a cell shows for a column (the name column draws its own element).
@@ -63,6 +73,7 @@ pub fn text(p: &ProcInfo, id: &str) -> String {
         "cpu" => fmt::pct(p.cpu),
         "mem" => fmt::bytes(p.mem),
         "disk" => rate(p.disk),
+        "net" => net(p.net),
         "gpu" => if p.gpu < 0.05 { "0%".into() } else { fmt::pct(p.gpu) },
         "engine" => if p.gpu < 0.05 { String::new() } else { p.gpu_engine.clone() },
         _ => p.name.clone(),
@@ -77,6 +88,7 @@ pub fn cmp(a: &ProcInfo, b: &ProcInfo, id: &str) -> Ordering {
         "cpu" => f(a.cpu, b.cpu),
         "mem" => a.mem.cmp(&b.mem),
         "disk" => a.disk.cmp(&b.disk),
+        "net" => a.net.cmp(&b.net),
         "gpu" => f(a.gpu, b.gpu),
         _ => text(a, id).to_lowercase().cmp(&text(b, id).to_lowercase()),
     }

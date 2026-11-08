@@ -15,6 +15,7 @@ pub struct Sampler {
     last: Option<Instant>,
     windir: String,
     gpu: Option<GpuSampler>,
+    net: crate::sys::net::NetMeter,
 }
 
 impl Sampler {
@@ -23,7 +24,11 @@ impl Sampler {
         sys.refresh_cpu_usage();
         let cores = sys.cpus().len().max(1) as f32;
         let windir = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()).to_lowercase();
-        Sampler { sys, cores, ver: VerCache::default(), last: None, windir, gpu: GpuSampler::new() }
+        // Per-process network needs an ETW session, which needs administrator rights.
+        if crate::sys::elevate::is_elevated() {
+            crate::sys::net::start();
+        }
+        Sampler { sys, cores, ver: VerCache::default(), last: None, windir, gpu: GpuSampler::new(), net: Default::default() }
     }
 
     /// Refresh and return the current process list (dead processes removed).
@@ -39,6 +44,7 @@ impl Sampler {
         self.sys.refresh_memory();
 
         let gpu = self.gpu.as_mut().map(|g| g.sample()).unwrap_or_default();
+        let net = self.net.rates();
         let elapsed = self.last.replace(Instant::now()).map(|t| t.elapsed().as_secs_f64()).unwrap_or(1.0).max(0.1);
 
         let procs = self
@@ -69,6 +75,7 @@ impl Sampler {
                     mem: p.memory(),
                     start: p.start_time(),
                     disk,
+                    net: net.get(&p.pid().as_u32()).copied().unwrap_or(0),
                     gpu: gpu_pct,
                     gpu_engine,
                     status: status_label(p.status()),

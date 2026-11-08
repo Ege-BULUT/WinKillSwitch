@@ -234,6 +234,7 @@ fn main() {
         });
     }
     app.run();
+    sys::net::stop();
 }
 
 fn init() -> App {

@@ -44,7 +44,8 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Live process table refreshed every 1.5 seconds: name, PID, CPU and memory, plus machine wide CPU and memory use.
 - Search by name, PID or executable path.
 - Sortable, resizable, virtualised table with multi selection and keyboard navigation.
-- Right click the header to choose columns: type, status, publisher, description, PID, command line, CPU, memory, disk, **GPU** and **GPU engine**. Your choice is saved.
+- Right click the header to choose columns: type, status, publisher, description, PID, command line, CPU, memory, disk, **network**, **GPU** and **GPU engine**. Your choice is saved.
+- **Network** shows each process's live traffic in Mbps, sent plus received, read from the same Windows event source Resource Monitor uses.
 - Per process GPU use from the same GPU Engine counters Task Manager reads, with the busiest engine (3D, video decode, copy and so on).
 - **Process tree**: switch the table between **List** and **Tree**. The tree nests each process under the one that started it, folds and unfolds branches, keeps siblings in your sort order, and during a search shows matches together with their parents. Reused process IDs are not mistaken for parents.
 - **Quick palette**: press **Ctrl+K** in the app, or **Ctrl+Shift+K** from anywhere, and type. Processes, groups and commands (clean memory, analyze disk, switch theme or mode, jump to a tab) come up as you type; arrow keys and Enter do the rest. The global shortcut can be turned off in Settings.
@@ -221,7 +222,7 @@ The first build compiles Rune and its GPU stack from source and takes a few minu
 - **Windows only.** Rune itself runs on macOS and Linux, but the system layer is written for Windows.
 - **Pre-release UI framework.** Rune has no tagged releases; this project pins an exact commit.
 - **Not signed.** No code signing and no installer yet.
-- **Collected but not shown.** Type, status, publisher, description, command line and disk I/O are sampled per process but not yet shown as columns.
+- **Network needs administrator rights.** Per process traffic comes from an ETW session, which Windows only allows elevated; without it the Network column shows a dash.
 
 ## Roadmap
 
@@ -240,7 +241,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Notifications when new processes start, by rule (v0.3.8)
 - [x] CPU and memory ceilings per program (v0.3.9)
 - [x] Wider autostart coverage: a read only "Starts with Windows" inventory (v0.3.10)
-- [ ] Per process network traffic
+- [x] Per process network traffic (v0.3.11)
 - [ ] Rule packs you can export and import, with ready made profiles such as Gaming mode and Bloat blocker
 - [ ] Ending processes: one, a tree, or everything related, asking apps to close before forcing them
 - [ ] PauseSwitch backend: Startup apps, services and scheduled tasks, restored exactly when switched off

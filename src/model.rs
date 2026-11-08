@@ -40,6 +40,8 @@ pub struct ProcInfo {
     pub start: u64,
     /// Disk I/O rate in bytes/second (read + write) over the last sample interval.
     pub disk: u64,
+    /// Network rate in bytes/second (sent + received); needs administrator rights.
+    pub net: u64,
     /// GPU use in percent (busiest engine type), and that engine type ("3D", "Video Decode").
     pub gpu: f32,
     pub gpu_engine: String,

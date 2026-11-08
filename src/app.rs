@@ -522,6 +522,7 @@ mod tree_tests {
             mem: 0,
             start,
             disk: 0,
+            net: 0,
             gpu: 0.0,
             gpu_engine: String::new(),
             status: "Running",
