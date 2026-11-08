@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 
 use rune::{Cx, El, Phase, col, el, icon, row, text};
-use rune_kit::{Button, ButtonVariant, Cell, ControlSize, MenuItem, Table, TableColumn, TextInput, context_menu};
+use rune_kit::{Button, ButtonVariant, Cell, ControlSize, MenuItem, SegmentedControl, Table, TableColumn, TextInput, context_menu};
 
 use crate::app::App;
 use crate::ui::theme::Look;
@@ -14,6 +14,8 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
     let ok = k.c.success.icon;
     let (ink, muted) = (l.text, l.muted);
     let ui = k.ty.ui;
+    let tree = s.appearance.tree;
+    let faint = l.muted.alpha(0.6);
 
     let mut table = Table::new(
         |s: &App| &s.table,
@@ -35,6 +37,38 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
         let Some(&pid) = s.view_rows.get(i) else { return Cell::text("") };
         let Some(p) = s.snap.get(pid) else { return Cell::text("") };
         match col {
+            "name" if tree => {
+                // Indent by depth; a chevron folds and unfolds the branch.
+                let (depth, kids) = s.row_meta.get(i).copied().unwrap_or((0, false));
+                let folded = s.collapsed.contains(&pid);
+                let chevron: El = if kids {
+                    row()
+                        .key(format!("fold-{pid}"))
+                        .size(16.0, 16.0)
+                        .center()
+                        .cursor(rune::Cursor::Pointer)
+                        .role("button")
+                        .label(if folded { "Expand" } else { "Collapse" })
+                        .on_press(move |s: &mut App| {
+                            if !s.collapsed.remove(&pid) {
+                                s.collapsed.insert(pid);
+                            }
+                            s.rebuild_rows();
+                        })
+                        .child(icon(&icons::CHEVRON, 10.0).color(muted).rotate(if folded { 0.0 } else { std::f32::consts::FRAC_PI_2 }))
+                } else {
+                    el().size(16.0, 16.0)
+                };
+                Cell::el(
+                    row()
+                        .gap(6.0)
+                        .center_y()
+                        .child(el().w(depth as f32 * 16.0).h(1.0))
+                        .child(chevron)
+                        .child(el().size(7.0, 7.0).radius(3.5).fill(if depth == 0 { ok } else { faint }))
+                        .child(text(p.name.clone()).font(ui).color(ink)),
+                )
+            }
             "name" => Cell::el(
                 row()
                     .gap(9.0)
@@ -99,7 +133,27 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
         .center_y()
         .justify_between()
         .gaps(10.0, 20.0)
-        .child(row().grow(1.0).min_w(240.0).max_w(560.0).gap(8.0).center_y().child(finder(s, l)).child(row().grow(1.0).min_w(160.0).child(search.w_full())))
+        .child(
+            row()
+                .grow(1.0)
+                .min_w(240.0)
+                .max_w(640.0)
+                .gap(8.0)
+                .center_y()
+                .child(finder(s, l))
+                .child(row().grow(1.0).min_w(160.0).child(search.w_full()))
+                .child(
+                    SegmentedControl::new(&["List", "Tree"], Some(usize::from(s.appearance.tree)))
+                        .label("Process view")
+                        .fit()
+                        .on_pick(|s: &mut App, i, _| {
+                            s.appearance.tree = i == 1;
+                            s.rebuild_rows();
+                            s.persist();
+                        })
+                        .build(k),
+                ),
+        )
         .child(stats);
 
     col()

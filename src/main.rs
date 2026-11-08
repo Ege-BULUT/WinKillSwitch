@@ -178,6 +178,7 @@ fn main() {
             ("clean", |s| s.tab = app::Tab::Clean),
             ("info-self", |s| s.pending_info = Some(std::process::id())),
             ("palette", |s| ui::palette::open(s)),
+            ("tree", |s| s.appearance.tree = true),
             ("pause", |s| s.tab = app::Tab::PauseSwitch),
             ("catppuccin", |s| s.appearance.palette = "catppuccin".into()),
             ("rose-pine", |s| s.appearance.palette = "rose-pine".into()),

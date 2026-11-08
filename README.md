@@ -46,6 +46,7 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - Sortable, resizable, virtualised table with multi selection and keyboard navigation.
 - Right click the header to choose columns: type, status, publisher, description, PID, command line, CPU, memory, disk, **GPU** and **GPU engine**. Your choice is saved.
 - Per process GPU use from the same GPU Engine counters Task Manager reads, with the busiest engine (3D, video decode, copy and so on).
+- **Process tree**: switch the table between **List** and **Tree**. The tree nests each process under the one that started it, folds and unfolds branches, keeps siblings in your sort order, and during a search shows matches together with their parents. Reused process IDs are not mistaken for parents.
 - **Quick palette**: press **Ctrl+K** in the app, or **Ctrl+Shift+K** from anywhere, and type. Processes, groups and commands (clean memory, analyze disk, switch theme or mode, jump to a tab) come up as you type; arrow keys and Enter do the rest. The global shortcut can be turned off in Settings.
 - **Find by window**: drag the target next to the search box onto any window. While you drag it names the process underneath; let go and that process is selected and scrolled into view.
 
@@ -133,11 +134,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
   </tr>
   <tr>
     <td><img src="docs/assets/columns-dark.png" alt="Extra columns including GPU"></td>
-    <td><img src="docs/assets/pal-catppuccin-dark.png" alt="Catppuccin Mocha"></td>
+    <td><img src="docs/assets/tree-dark.png" alt="Process tree"></td>
   </tr>
   <tr>
     <td align="center"><sub>Extra columns, including GPU and GPU engine</sub></td>
-    <td align="center"><sub>Catppuccin Mocha</sub></td>
+    <td align="center"><sub>Process tree</sub></td>
   </tr>
   <tr>
     <td><img src="docs/assets/pal-tokyo-dark.png" alt="Tokyo Night"></td>
@@ -203,7 +204,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Column picker on header right click, including per process GPU usage (v0.3.2)
 - [x] Find a process by pointing at its window (v0.3.3)
 - [x] Global hotkey and quick palette (v0.3.4)
-- [ ] Process tree view
+- [x] Process tree view (v0.3.5)
 - [ ] Find out which process is locking a file
 - [ ] "Why is my PC slow?" one click diagnosis
 - [ ] Notifications when new processes start, by rule

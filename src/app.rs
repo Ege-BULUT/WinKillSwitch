@@ -126,6 +126,10 @@ pub struct App {
     pub table: TableState,
     /// Filtered, sorted pids for the current frame (rebuilt in `poll`).
     pub view_rows: Vec<Pid>,
+    /// For each row in tree view: its depth and whether it has children shown or hidden.
+    pub row_meta: Vec<(u16, bool)>,
+    /// Tree branches the user folded.
+    pub collapsed: HashSet<Pid>,
     /// The process row the user touched last, for "add all related".
     pub active_pid: Option<Pid>,
 
@@ -177,6 +181,8 @@ impl App {
             search_edit: rune::TextEdit::new(""),
             table: TableState::new().multi_select(true),
             view_rows: Vec::new(),
+            row_meta: Vec::new(),
+            collapsed: HashSet::new(),
             active_pid: None,
             rename: None,
             confirm: None,
@@ -303,7 +309,94 @@ impl App {
 
     /// Recompute the table's visible rows from the snapshot, search and sort.
     pub fn rebuild_rows(&mut self) {
-        self.view_rows = self.filtered_pids();
+        if self.appearance.tree {
+            let (rows, meta) = self.tree_rows();
+            self.view_rows = rows;
+            self.row_meta = meta;
+        } else {
+            self.view_rows = self.filtered_pids();
+            self.row_meta.clear();
+        }
+    }
+
+    /// The parent a process really has: one that is still running and started before it.
+    /// Windows reuses PIDs, so a "parent" that started later is someone else.
+    fn real_parent(&self, p: &crate::model::ProcInfo) -> Option<Pid> {
+        let pp = p.parent?;
+        if pp == p.pid {
+            return None;
+        }
+        let parent = self.snap.get(pp)?;
+        (parent.start <= p.start || parent.start == 0 || p.start == 0).then_some(pp)
+    }
+
+    /// Depth-first rows for the tree view, siblings in the table's sort order. With a search,
+    /// matches show with their ancestors so they keep their place.
+    pub fn tree_rows(&self) -> (Vec<Pid>, Vec<(u16, bool)>) {
+        use std::collections::HashMap;
+        let q = self.search.trim().to_lowercase();
+        let matches = |p: &crate::model::ProcInfo| {
+            q.is_empty()
+                || p.name.to_lowercase().contains(&q)
+                || p.pid.to_string().contains(&q)
+                || p.exe.as_ref().map(|e| e.to_string_lossy().to_lowercase().contains(&q)).unwrap_or(false)
+        };
+        let mut children: HashMap<Pid, Vec<&crate::model::ProcInfo>> = HashMap::new();
+        let mut roots: Vec<&crate::model::ProcInfo> = Vec::new();
+        for p in &self.snap.procs {
+            match self.real_parent(p) {
+                Some(pp) => children.entry(pp).or_default().push(p),
+                None => roots.push(p),
+            }
+        }
+        // Which pids to show: matches and every ancestor of a match.
+        let mut keep: HashSet<Pid> = HashSet::new();
+        for p in self.snap.procs.iter().filter(|p| matches(p)) {
+            let mut cur = Some(p.pid);
+            let mut guard = 0;
+            while let Some(pid) = cur {
+                if !keep.insert(pid) || guard > 64 {
+                    break;
+                }
+                guard += 1;
+                cur = self.snap.get(pid).and_then(|x| self.real_parent(x));
+            }
+        }
+        let (col, dir) = self.table.sort().unwrap_or(("cpu", rune_kit::SortDir::Descending));
+        let sort = |v: &mut Vec<&crate::model::ProcInfo>| v.sort_by(|a, b| dir.apply(crate::ui::columns::cmp(a, b, col)));
+        sort(&mut roots);
+        for v in children.values_mut() {
+            sort(v);
+        }
+        let (mut rows, mut meta) = (Vec::new(), Vec::new());
+        let mut seen: HashSet<Pid> = HashSet::new();
+        // (process, depth, shown): rows under a folded branch are walked but not shown, so they
+        // count as reached and are not mistaken for orphans below.
+        let mut stack: Vec<(&crate::model::ProcInfo, u16, bool)> = roots.into_iter().rev().map(|p| (p, 0, true)).collect();
+        while let Some((p, depth, shown)) = stack.pop() {
+            if !keep.contains(&p.pid) || !seen.insert(p.pid) {
+                continue;
+            }
+            let kids: Vec<&crate::model::ProcInfo> = children.get(&p.pid).map(|v| v.iter().copied().filter(|c| keep.contains(&c.pid)).collect()).unwrap_or_default();
+            if shown {
+                rows.push(p.pid);
+                meta.push((depth, !kids.is_empty()));
+            }
+            let open = shown && (!self.collapsed.contains(&p.pid) || !q.is_empty());
+            for c in kids.into_iter().rev() {
+                stack.push((c, depth.saturating_add(1), open));
+            }
+        }
+        // Anything not reached (a parent cycle, which reused PIDs can produce) still shows, at
+        // the top level, rather than vanishing.
+        for p in &self.snap.procs {
+            if keep.contains(&p.pid) && !seen.contains(&p.pid) {
+                seen.insert(p.pid);
+                rows.push(p.pid);
+                meta.push((0, false));
+            }
+        }
+        (rows, meta)
     }
 
     /// Processes passing the search filter, already sorted by the table's column.
@@ -370,5 +463,74 @@ mod tests {
         assert!(a.column_shown("name"), "name always shows");
         a.columns.clear();
         assert!(a.column_shown("gpu"), "empty means the default set");
+    }
+}
+
+#[cfg(test)]
+mod tree_tests {
+    use super::*;
+    use crate::model::{ProcInfo, ProcKind, Snapshot};
+
+    fn proc(pid: Pid, parent: Option<Pid>, start: u64, name: &str, cpu: f32) -> ProcInfo {
+        ProcInfo {
+            pid,
+            parent,
+            name: name.into(),
+            exe: None,
+            cpu,
+            mem: 0,
+            start,
+            disk: 0,
+            gpu: 0.0,
+            gpu_engine: String::new(),
+            status: "Running",
+            kind: ProcKind::App,
+            cmd: String::new(),
+            session: Some(1),
+            publisher: String::new(),
+            description: name.into(),
+        }
+    }
+
+    fn app(procs: Vec<ProcInfo>) -> App {
+        let mut a = App::new();
+        crate::demo::apply(&mut a);
+        a.snap = Snapshot { procs, ..Default::default() };
+        a.appearance.tree = true;
+        a.search.clear();
+        a.collapsed.clear();
+        a.rebuild_rows();
+        a
+    }
+
+    #[test]
+    fn depth_first_with_depths() {
+        let a = app(vec![proc(1, None, 10, "explorer.exe", 1.0), proc(2, Some(1), 20, "chrome.exe", 5.0), proc(3, Some(2), 30, "chrome-gpu.exe", 2.0), proc(4, None, 5, "svchost.exe", 0.1)]);
+        assert_eq!(a.view_rows, vec![1, 2, 3, 4]);
+        assert_eq!(a.row_meta, vec![(0, true), (1, true), (2, false), (0, false)]);
+    }
+
+    #[test]
+    fn a_reused_parent_pid_is_not_a_parent() {
+        // pid 7 started after its "child": the real parent is gone and 7 was reused.
+        let a = app(vec![proc(7, None, 100, "newcomer.exe", 0.0), proc(8, Some(7), 50, "orphan.exe", 0.0)]);
+        assert_eq!(a.row_meta, vec![(0, false), (0, false)]);
+    }
+
+    #[test]
+    fn folding_hides_descendants_and_search_keeps_ancestors() {
+        let mut a = app(vec![proc(1, None, 10, "explorer.exe", 1.0), proc(2, Some(1), 20, "chrome.exe", 5.0), proc(3, Some(2), 30, "gpu-helper.exe", 2.0)]);
+        a.collapsed.insert(1);
+        a.rebuild_rows();
+        assert_eq!(a.view_rows, vec![1]);
+        a.search = "gpu-helper".into();
+        a.rebuild_rows();
+        assert_eq!(a.view_rows, vec![1, 2, 3], "a match shows with its ancestors, even inside a folded branch");
+    }
+
+    #[test]
+    fn survives_parent_cycles() {
+        let a = app(vec![proc(1, Some(2), 0, "a.exe", 0.0), proc(2, Some(1), 0, "b.exe", 0.0)]);
+        assert_eq!(a.view_rows.len(), 2, "both still show");
     }
 }

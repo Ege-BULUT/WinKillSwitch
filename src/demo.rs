@@ -80,6 +80,20 @@ pub fn apply(s: &mut App) {
     procs[0].start = crate::model::now_secs().saturating_sub(3 * 3600 + 25 * 60);
     procs[0].cmd = r#""C:\Program Files\Google\Chrome\Application\chrome.exe" --profile-directory=Default --restore-last-session"#.into();
     procs[0].description = "Google Chrome".into();
+    // A believable tree: apps under Explorer, helpers under their app, services under services.exe.
+    let pid_of = |procs: &Vec<ProcInfo>, n: &str| procs.iter().find(|p| p.name == n).map(|p| p.pid);
+    let explorer = pid_of(&procs, "explorer.exe");
+    let steam = pid_of(&procs, "steam.exe");
+    for p in procs.iter_mut() {
+        p.parent = match p.name.as_str() {
+            "steamwebhelper.exe" => steam,
+            "chrome.exe" if p.pid != chrome_pid => Some(chrome_pid),
+            "Code.exe" | "Spotify.exe" | "Discord.exe" | "Figma.exe" | "steam.exe" | "Notion.exe" | "Slack.exe" | "Docker Desktop.exe"
+            | "EpicGamesLauncher.exe" | "Zoom.exe" | "OneDrive.exe" | "winkillswitch.exe" => explorer,
+            "chrome.exe" => explorer,
+            _ => p.parent,
+        };
+    }
     s.snap = Snapshot { procs, total_mem: 32 * 1024 * 1024 * 1024, used_mem: 15 * 1024 * 1024 * 1024, cpu_total: 18.0 };
 
     let chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe";
@@ -172,6 +186,9 @@ pub fn apply(s: &mut App) {
             s.disk.phase = DiskPhase::Done { freed, deleted: 48_210, skipped: 41, at: -100.0 };
         }
         _ => {}
+    }
+    if std::env::var("WKS_TREE").is_ok() {
+        s.appearance.tree = true;
     }
     if let Ok(cols) = std::env::var("WKS_COLUMNS") {
         s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();

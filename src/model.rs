@@ -236,6 +236,8 @@ pub struct Appearance {
     pub animated: bool,
     /// Ctrl+Shift+K opens the quick palette from anywhere.
     pub hotkey: bool,
+    /// Show processes as a parent and child tree instead of a flat list.
+    pub tree: bool,
 }
 
 impl Default for Appearance {
@@ -248,6 +250,7 @@ impl Default for Appearance {
             strength: 1,
             animated: true,
             hotkey: true,
+            tree: false,
         }
     }
 }
