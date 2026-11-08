@@ -4074,7 +4074,7 @@ dependencies = [
 
 [[package]]
 name = "winkillswitch"
-version = "0.3.12"
+version = "0.4.0"
 dependencies = [
  "rune",
  "rune-fx",

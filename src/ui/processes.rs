@@ -9,7 +9,7 @@ use crate::app::App;
 use crate::ui::theme::Look;
 use crate::ui::{columns, fmt, icons};
 
-pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
+pub fn view(s: &App, cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
     let k = &l.kit;
     let ok = k.c.success.icon;
     let (ink, muted) = (l.text, l.muted);
@@ -24,7 +24,10 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
         |s: &App, i| Cow::Owned(s.view_rows.get(i).copied().unwrap_or(0).to_string()),
     )
     .name("Processes");
-    for c in columns::ALL.iter().filter(|c| s.column_shown(c.id)) {
+    // Columns that do not fit the frame are left out, least useful first, until the window widens.
+    let frame_w = cx.layout_size("table-frame").map(|z| z[0]).unwrap_or(f32::MAX);
+    let shown: Vec<&columns::Col> = columns::fit(columns::ALL.iter().filter(|c| s.column_shown(c.id)).collect(), frame_w);
+    for c in shown {
         let mut tc = TableColumn::new(c.id, c.title).min(c.min).align(columns::align(c)).sortable();
         tc = match c.width {
             Some(w) => tc.width(w),
@@ -136,7 +139,7 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look, layer: &mut Vec<El>) -> El {
         .child(
             row()
                 .grow(1.0)
-                .min_w(240.0)
+                .min_w(360.0)
                 .max_w(640.0)
                 .gap(8.0)
                 .center_y()

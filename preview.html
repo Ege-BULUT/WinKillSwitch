@@ -127,7 +127,7 @@ WinKillSwitch is a desktop process manager for Windows. It shows what is running
 The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyco/rune). Panels are real glass over a live gradient, every change animates on springs, and the whole look follows the palette you pick.
 
 > [!NOTE]
-> WinKillSwitch is in **alpha**. The interface, process monitoring, groups, theming and the memory and disk cleaners work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
+> WinKillSwitch is in **alpha**. Process monitoring (with GPU and network), groups, theming, the memory and disk cleaners, the slow PC check, file lock finder, startup inventory, alerts, limits and rule packs work today. Ending processes and the PauseSwitch system changes are designed and wired into the UI but not implemented yet. See [Known limitations](#known-limitations).
 
 ## Features
 
@@ -314,7 +314,7 @@ The first build compiles Rune and its GPU stack from source and takes a few minu
 
 ## Known limitations
 
-- **Process actions are stubs.** Ending a process, ending everything related to an app, the respawn guard and PauseSwitch's autostart changes are defined behind interfaces in [`src/sys`](src/sys) and wired into the UI, but in this alpha they do nothing and say so. Nothing on your system is modified.
+- **Process actions are stubs.** Ending a process, ending everything related to an app, the respawn guard and PauseSwitch's autostart changes are defined behind interfaces in [`src/sys`](src/sys) and wired into the UI, but in this build they do nothing and say so. The only things that change your system are the ones you start yourself: cleaning memory or disk, and limits.
 - **Windows only.** Rune itself runs on macOS and Linux, but the system layer is written for Windows.
 - **Pre-release UI framework.** Rune has no tagged releases; this project pins an exact commit.
 - **Not signed.** No code signing and no installer yet.
@@ -322,7 +322,7 @@ The first build compiles Rune and its GPU stack from source and takes a few minu
 
 ## Roadmap
 
-Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, **v0.3.x** ships the rest of this list one feature at a time, and **v0.4** is the complete, tested set.
+**v0.4.0** is the complete, tested set of everything ticked below: v0.2 added the memory cleaner, v0.3 the disk cleaner, and each v0.3.x one feature at a time. What is left:
 
 - [x] Responsive under load: sampling and cleaning run off the UI thread, and the UI runs at above normal priority
 - [x] Memory cleaner: a live memory gauge and one Clean button that shows exactly what it freed (v0.2)
@@ -355,9 +355,11 @@ src/
   model.rs       shared types and saved settings
   store.rs       JSON persistence with atomic writes
   demo.rs        the fixed demo machine used for screenshots
-  sys/           Windows access: sampling, elevation, version info, process actions
+  sys/           Windows access: sampling, GPU and network meters, cleaners, limits,
+                 file locks, startup inventory, alerts, rule packs, diagnosis
   ui/            the Rune view: glass, palettes, compositor, tabs and settings
-docs/            README assets and the title generator
+packs/           the built in rule packs, plain JSON
+docs/            README assets, the title generator and end to end scripts
 research/        feature research report
 ```
 

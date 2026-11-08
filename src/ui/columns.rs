@@ -43,6 +43,21 @@ pub const ALL: [Col; 13] = [
 
 pub const DEFAULT: [&str; 7] = ["name", "pid", "cpu", "mem", "disk", "net", "gpu"];
 
+/// Which columns go first when the table is too narrow for all of them.
+const DROP_ORDER: [&str; 11] = ["engine", "desc", "cmd", "publisher", "status", "type", "gpu", "net", "disk", "pid", "mem"];
+
+/// Keep the columns that fit `width`, dropping by `DROP_ORDER`. Name always stays.
+pub fn fit(mut cols: Vec<&'static Col>, width: f32) -> Vec<&'static Col> {
+    let need = |cs: &[&Col]| cs.iter().map(|c| c.width.unwrap_or(c.min)).sum::<f32>() + 24.0;
+    for id in DROP_ORDER {
+        if need(&cols) <= width {
+            break;
+        }
+        cols.retain(|c| c.id != id);
+    }
+    cols
+}
+
 pub fn align(c: &Col) -> Align {
     if c.end { Align::End } else { Align::Start }
 }
@@ -77,6 +92,20 @@ pub fn text(p: &ProcInfo, id: &str) -> String {
         "gpu" => if p.gpu < 0.05 { "0%".into() } else { fmt::pct(p.gpu) },
         "engine" => if p.gpu < 0.05 { String::new() } else { p.gpu_engine.clone() },
         _ => p.name.clone(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn narrow_tables_drop_the_least_useful_columns() {
+        let all: Vec<&Col> = ALL.iter().filter(|c| DEFAULT.contains(&c.id)).collect();
+        assert_eq!(fit(all.clone(), f32::MAX).len(), DEFAULT.len());
+        let ids = |v: Vec<&Col>| v.iter().map(|c| c.id).collect::<Vec<_>>();
+        assert_eq!(ids(fit(all.clone(), 560.0)), ["name", "pid", "cpu", "mem", "disk"]);
+        assert_eq!(ids(fit(all, 10.0)), ["name", "cpu"]);
     }
 }
 
