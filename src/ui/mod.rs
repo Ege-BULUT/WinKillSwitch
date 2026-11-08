@@ -8,6 +8,7 @@ pub mod groups;
 pub mod icons;
 pub mod diagnose;
 pub mod info;
+pub mod limits;
 pub mod locks;
 pub mod overlays;
 pub mod palette;

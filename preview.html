@@ -161,6 +161,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - One button (on the Clean tab, or in the quick palette) watches the machine for about five seconds, then answers in plain words: processor, memory, disk space, disk activity, graphics and uptime, worst first.
 - It names the process behind a problem, averaged over the samples so a one-off spike is not blamed, and puts the fix one click away: **Show it**, **Clean memory** or **Analyze disk**.
 
+**Limits**
+- Cap a program's processor and memory use from its **Details** card: 50%, 25% or 10% of the processor, 4 GB down to 512 MB of RAM per process.
+- The processor cap covers all of the program's processes together through a Windows Job Object, so it only runs slower. The memory cap is a working set ceiling: Windows pages the rest out instead of failing allocations, so the program keeps running.
+- Limits are saved by program name and come back whenever it starts again. Settings lists them; remove one and the program is free at once. Windows' own processes cannot be limited.
+
 **New process alerts**
 - In Settings, list the programs you want to hear about (wildcards work: `steam*`) and get a small note in the corner when one starts, with **Show** one click away.
 - Optionally get the same note for anything that starts from Downloads or a temporary folder, where installers and most malware run from. Off by default, so nothing nags you.
@@ -319,7 +324,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] Find out which process is locking a file (v0.3.6)
 - [x] "Why is my PC slow?" one click diagnosis (v0.3.7)
 - [x] Notifications when new processes start, by rule (v0.3.8)
-- [ ] CPU and memory caps per process or group
+- [x] CPU and memory ceilings per program (v0.3.9)
 - [ ] Wider autostart coverage
 - [ ] Per process network traffic
 - [ ] Rule packs you can export and import, with ready made profiles such as Gaming mode and Bloat blocker

@@ -248,6 +248,22 @@ pub fn sheet(s: &App, l: &Look, layer: &mut Vec<El>, window_h: f32) {
             .build(k)
             .key("info-search"),
     );
+    if p.kind != crate::model::ProcKind::Windows && pid != std::process::id() {
+        let name = p.name.clone();
+        let limited = s.limits.iter().any(|x| x.name.eq_ignore_ascii_case(&name));
+        actions = actions.child(
+            Button::new(if limited { "Edit limits" } else { "Set limits" })
+                .variant(ButtonVariant::Outline)
+                .control_size(ControlSize::Regular)
+                .icon(&icons::CHIP)
+                .on_press(move |s: &mut App| {
+                    s.info = None;
+                    crate::ui::limits::open(s, name.clone());
+                })
+                .build(k)
+                .key("info-limits"),
+        );
+    }
     if let Some(gid) = s.selected_group {
         let gname = s.group(gid).map(|g| g.name.clone()).unwrap_or_default();
         actions = actions.child(

@@ -64,6 +64,7 @@ pub fn view(s: &App, cx: &mut Cx<App>) -> El {
     overlays::confirm(s, &l.kit, &mut layer);
     overlays::toasts(s, &l.kit, &mut layer);
     crate::ui::locks::sheet(s, &l, &mut layer);
+    crate::ui::limits::dialog(s, &l, &mut layer);
     crate::ui::diagnose::sheet(s, &l, &mut layer, window_h);
     crate::ui::palette::overlay(s, &l, &mut layer);
     crate::ui::locks::drop_hint(s, &l, &mut layer);

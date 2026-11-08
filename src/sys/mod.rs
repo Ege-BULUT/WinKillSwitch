@@ -10,6 +10,7 @@ pub mod info;
 pub mod alerts;
 pub mod diagnose;
 pub mod kill;
+pub mod limits;
 pub mod locks;
 pub mod memory;
 pub mod procs;

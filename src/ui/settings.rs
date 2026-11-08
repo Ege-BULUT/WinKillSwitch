@@ -333,7 +333,8 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
             col().gap(12.0).child(row().gap(12.0).flex_wrap().child(glass).child(strength)).child(animated),
         ))
         .child(section(l, "Shortcuts", "Reach anything by typing its name.", hotkey))
-        .child(section(l, "Alerts", "A quiet note in the corner when a new process starts that you care about.", alerts));
+        .child(section(l, "Alerts", "A quiet note in the corner when a new process starts that you care about.", alerts))
+        .child(section(l, "Limits", "Processor and memory ceilings for programs, kept until you remove them.", crate::ui::limits::settings_list(s, l)));
 
     col().w_full().h_full().min_h(0.0).child(body.scroll(ScrollSpec { stick_bottom: false }).grow(1.0).min_h(0.0))
 }

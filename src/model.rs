@@ -205,6 +205,9 @@ pub struct Saved {
     /// New-process alert rules.
     #[serde(default)]
     pub alerts: crate::sys::alerts::Alerts,
+    /// CPU and memory ceilings by program name.
+    #[serde(default)]
+    pub limits: Vec<crate::sys::limits::Limit>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

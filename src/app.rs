@@ -151,6 +151,10 @@ pub struct App {
     pub alert_watch: crate::sys::alerts::Watcher,
     pub alert_roots: Vec<String>,
     pub alert_edit: rune::TextEdit,
+    /// CPU and memory ceilings, what is applied, and the dialog while open.
+    pub limits: Vec<crate::sys::limits::Limit>,
+    pub enforcer: crate::sys::limits::Enforcer,
+    pub limit_dialog: Option<crate::ui::limits::LimitDialog>,
 
     pub elevated: bool,
     pub clock: f64,
@@ -209,6 +213,9 @@ impl App {
             alert_watch: Default::default(),
             alert_roots: crate::sys::alerts::risky_roots(),
             alert_edit: rune::TextEdit::new(""),
+            limits: saved.limits.clone(),
+            enforcer: Default::default(),
+            limit_dialog: None,
             elevated: sys::elevate::is_elevated(),
             clock: 0.0,
             last_sample: -10.0,
@@ -221,7 +228,7 @@ impl App {
         if self.demo {
             return; // never write the made-up demo machine over the user's saved state
         }
-        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: self.columns.clone(), appearance: self.appearance.clone(), alerts: self.alerts.clone() };
+        let saved = Saved { groups: self.groups.clone(), next_id: self.next_id, columns: self.columns.clone(), appearance: self.appearance.clone(), alerts: self.alerts.clone(), limits: self.limits.clone() };
         if let Err(e) = store::save(&saved) {
             eprintln!("winkillswitch: could not save state: {e}");
         }

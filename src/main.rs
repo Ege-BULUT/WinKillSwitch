@@ -43,6 +43,10 @@ fn handle(s: &mut App, m: Msg) {
             for (pid, name, why) in hits {
                 s.toast_about(pid, format!("{name} started"), why);
             }
+            if !s.limits.is_empty() {
+                let errors = s.enforcer.sync(&s.limits, &s.snap);
+                ui::limits::report(s, errors);
+            }
             if let Some(pid) = s.pending_info.take() {
                 s.open_info(pid);
             }

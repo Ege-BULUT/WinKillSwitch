@@ -199,6 +199,14 @@ pub fn apply(s: &mut App) {
             s.toast_about(p, "Discord.exe started", "Matches your rule \"discord\"".into());
         }
     }
+    s.limits = vec![crate::sys::limits::Limit { name: "chrome.exe".into(), cpu: Some(25), mem_mb: Some(2048) }];
+    if let Ok(name) = std::env::var("WKS_LIMIT") {
+        crate::ui::limits::open(s, name);
+        if let Some(d) = s.limit_dialog.as_mut() {
+            d.cpu = 2;
+            d.mem = 3;
+        }
+    }
     if std::env::var("WKS_DIAG").is_ok() {
         crate::ui::diagnose::start(s);
     }
