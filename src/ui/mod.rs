@@ -8,6 +8,7 @@ pub mod groups;
 pub mod icons;
 pub mod info;
 pub mod overlays;
+pub mod palette;
 pub mod palettes;
 pub mod pauseswitch;
 pub mod processes;

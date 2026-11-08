@@ -48,5 +48,6 @@ pub fn view(s: &App, cx: &mut Cx<App>) -> El {
     crate::ui::info::sheet(s, &l, &mut layer, window_h);
     overlays::confirm(s, &l.kit, &mut layer);
     overlays::toasts(s, &l.kit, &mut layer);
+    crate::ui::palette::overlay(s, &l, &mut layer);
     rune_kit::root(base, layer)
 }

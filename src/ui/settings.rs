@@ -171,6 +171,42 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
                 .build(k),
         );
 
+    let hk = crate::sys::hotkey::status();
+    let hotkey = row()
+        .w_full()
+        .max_w(560.0)
+        .gap(16.0)
+        .center_y()
+        .padding(12.0)
+        .radius(12.0)
+        .fill(l.card)
+        .child(
+            col()
+                .grow(1.0)
+                .gap(2.0)
+                .child(text(format!("Quick palette from anywhere ({})", crate::sys::hotkey::LABEL)).font(k.ty.ui_medium).color(l.text))
+                .child(
+                    text(match hk {
+                        crate::sys::hotkey::Status::Taken => "Another app already uses this shortcut, so it is not active. Ctrl+K still works inside WinKillSwitch.",
+                        _ => "Brings WinKillSwitch forward with the palette open, even when it is in the background. Ctrl+K works inside the app.",
+                    })
+                    .font(k.ty.small)
+                    .color(if hk == crate::sys::hotkey::Status::Taken { k.c.warning.icon } else { l.muted })
+                    .wrap(),
+                ),
+        )
+        .child(
+            Switch::new(a.hotkey)
+                .label("Quick palette shortcut")
+                .hide_label()
+                .on_toggle(|s: &mut App| {
+                    s.appearance.hotkey = !s.appearance.hotkey;
+                    crate::sys::hotkey::set_enabled(s.appearance.hotkey);
+                    s.persist();
+                })
+                .build(k),
+        );
+
     let body = col()
         .key("settings-body")
         .w_full()
@@ -190,7 +226,8 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
             "Glass",
             "Liquid glass bends light at its edges like the tab bar, fluted glass has vertical ribs, frosted glass is the calmest.",
             col().gap(12.0).child(row().gap(12.0).flex_wrap().child(glass).child(strength)).child(animated),
-        ));
+        ))
+        .child(section(l, "Shortcuts", "Reach anything by typing its name.", hotkey));
 
     col().w_full().h_full().min_h(0.0).child(body.scroll(ScrollSpec { stick_bottom: false }).grow(1.0).min_h(0.0))
 }

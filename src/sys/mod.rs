@@ -5,6 +5,7 @@ pub mod elevate;
 pub mod finder;
 pub mod gpu;
 pub mod guard;
+pub mod hotkey;
 pub mod info;
 pub mod kill;
 pub mod memory;

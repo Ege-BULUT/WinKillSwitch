@@ -176,6 +176,9 @@ pub fn apply(s: &mut App) {
     if let Ok(cols) = std::env::var("WKS_COLUMNS") {
         s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();
     }
+    if std::env::var("WKS_OPEN_PALETTE").is_ok() {
+        crate::ui::palette::open(s);
+    }
     if std::env::var("WKS_INFO").is_ok() {
         use crate::sys::info::{Account, Detail, Signature, Verdict};
         s.info = Some(crate::app::InfoState {

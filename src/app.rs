@@ -12,7 +12,7 @@ use crate::sys::memory::{MemStatus, RamReport};
 use crate::worker::{Cmd, Worker};
 use crate::{store, sys};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tab {
     Processes,
     Clean,
@@ -108,6 +108,8 @@ pub struct App {
     pub columns: Vec<String>,
     /// Where the column picker opened, while it is open.
     pub column_menu: Option<rune::PointerPress>,
+    /// The quick palette, while open.
+    pub palette: Option<crate::ui::palette::PaletteState>,
     /// Dragging the find-by-window target, and what it is over right now.
     pub finding: bool,
     pub find_hover: Option<crate::sys::finder::Target>,
@@ -161,6 +163,7 @@ impl App {
             info: None,
             columns: saved.columns.clone(),
             column_menu: None,
+            palette: None,
             finding: false,
             find_hover: None,
             pending_info: None,

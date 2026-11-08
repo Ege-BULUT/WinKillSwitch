@@ -234,6 +234,8 @@ pub struct Appearance {
     pub strength: u8,
     /// The background gradient drifts slowly (costs a little GPU while the window shows).
     pub animated: bool,
+    /// Ctrl+Shift+K opens the quick palette from anywhere.
+    pub hotkey: bool,
 }
 
 impl Default for Appearance {
@@ -245,6 +247,7 @@ impl Default for Appearance {
             glass: GlassStyle::Liquid,
             strength: 1,
             animated: true,
+            hotkey: true,
         }
     }
 }

@@ -147,6 +147,14 @@ Usage: WinKillSwitch.exe [--version] [--scene demo --snap out.png --size 1280x80
     true
 }
 
+fn on_key(s: &mut App, ev: &rune::KeyEvent, _tx: &mut Tx) -> bool {
+    if ev.is_command('k') && s.palette.is_none() {
+        ui::palette::open(s);
+        return true;
+    }
+    false
+}
+
 fn main() {
     if cli() {
         return;
@@ -162,12 +170,14 @@ fn main() {
     let chrome = Chrome { full_size_content: true, traffic_lights: None, drag_regions: true };
     let spec = AppSpec {
         poll: Some(poll),
+        on_key: Some(on_key),
         // Named states for headless snapshots (`--snap out.png --scene settings`).
         scenes: &[
             ("demo", demo::apply),
             ("settings", |s| s.tab = app::Tab::Settings),
             ("clean", |s| s.tab = app::Tab::Clean),
             ("info-self", |s| s.pending_info = Some(std::process::id())),
+            ("palette", |s| ui::palette::open(s)),
             ("pause", |s| s.tab = app::Tab::PauseSwitch),
             ("catppuccin", |s| s.appearance.palette = "catppuccin".into()),
             ("rose-pine", |s| s.appearance.palette = "rose-pine".into()),
@@ -179,7 +189,20 @@ fn main() {
         min_size: Some((820.0, 560.0)),
         ..AppSpec::new("WinKillSwitch", (1080.0, 720.0), init, ui::view)
     };
-    rune::App::new(spec).chrome(chrome).compositor(ui::gfx::Gfx::default()).run();
+    let app = rune::App::new(spec).chrome(chrome).compositor(ui::gfx::Gfx::default());
+    // Ctrl+Shift+K from anywhere: bring the window forward with the palette open.
+    if !rune::is_headless() {
+        let handle = app.handle();
+        sys::hotkey::start(store::load().appearance.hotkey, move || {
+            handle.open();
+            handle.update(|s: &mut App, _| {
+                if s.palette.is_none() {
+                    ui::palette::open(s);
+                }
+            });
+        });
+    }
+    app.run();
 }
 
 fn init() -> App {
