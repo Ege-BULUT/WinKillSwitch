@@ -172,6 +172,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - The processor cap covers all of the program's processes together through a Windows Job Object, so it only runs slower. The memory cap is a working set ceiling: Windows pages the rest out instead of failing allocations, so the program keeps running.
 - Limits are saved by program name and come back whenever it starts again. Settings lists them; remove one and the program is free at once. Windows' own processes cannot be limited.
 
+**Rule packs**
+- Three ready made profiles in Settings, each one switch: **Gaming mode** (sync, chat and music apps capped while you play), **Bloat blocker** (alerts for updaters and anything from Downloads or Temp, with updaters capped) and **Quiet laptop** (browsers and chat apps capped for cooler, longer battery life).
+- Turning a profile off removes exactly the rules it added and keeps any you changed since.
+- **Export my rules** saves your limits and alerts as a JSON file; **Import a pack** merges one in, checked first so a bad file never half applies. The built in profiles live in [`packs/`](packs) as examples of the format.
+
 **New process alerts**
 - In Settings, list the programs you want to hear about (wildcards work: `steam*`) and get a small note in the corner when one starts, with **Show** one click away.
 - Optionally get the same note for anything that starts from Downloads or a temporary folder, where installers and most malware run from. Off by default, so nothing nags you.
@@ -333,7 +338,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] CPU and memory ceilings per program (v0.3.9)
 - [x] Wider autostart coverage: a read only "Starts with Windows" inventory (v0.3.10)
 - [x] Per process network traffic (v0.3.11)
-- [ ] Rule packs you can export and import, with ready made profiles such as Gaming mode and Bloat blocker
+- [x] Rule packs you can export and import, with ready made profiles: Gaming mode, Bloat blocker and Quiet laptop (v0.3.12)
 - [ ] Ending processes: one, a tree, or everything related, asking apps to close before forcing them
 - [ ] PauseSwitch backend: Startup apps, services and scheduled tasks, restored exactly when switched off
 - [ ] Signed releases and a winget package
