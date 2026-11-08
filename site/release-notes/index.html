@@ -50,6 +50,8 @@ h1{font-family:var(--display);font-size:clamp(40px,7vw,68px);line-height:1.05;ma
 .planned-list .rel{opacity:.72;padding:22px 26px}
 .planned-list .rel h2{font-size:22px}
 .planned-list p{margin:4px 0 0;color:var(--muted)}
+.lede-sm{color:var(--muted);margin:2px 0 6px}
+.rel ul ul{margin-top:4px}
 footer{margin-top:40px;color:var(--faint);font-size:14px}
 </style>
 </head>
@@ -63,35 +65,346 @@ footer{margin-top:40px;color:var(--faint);font-size:14px}
   <h1>Release notes</h1>
   <p class="lede">What changed in each version of WinKillSwitch. The newest notes always appear first on <a href="https://github.com/Ege-BULUT/WinKillSwitch/releases">GitHub Releases</a>, together with every download.</p>
 
+  <!-- RELEASES -->
+  <article class="rel glass" id="v0.4.0">
+    <header><h2>v0.4.0</h2><span class="tag latest">Latest</span><span class="date">November 8, 2026</span></header>
+    
+    <h3>WinKillSwitch 0.4</h3>
+    <p>Everything planned for this round, finished and tested together. If you are coming from v0.1, here is what you get.</p>
+    <h3>Clean up</h3>
+    <ul>
+    <li><b>Memory cleaner</b> (v0.2): a live memory ring and one button. It trims what apps are not using, clears the standby cache and shows exactly what it freed.</li>
+    <li><b>Disk cleaner</b> (v0.3): analyze temporary files, caches and leftovers, review the list, clean in one step. It never follows links, keeps files from the last week and skips anything in use.</li>
+    <li><b>Why is my PC slow?</b> (v0.3.7): five seconds of watching, then a plain answer with the fix one click away.</li>
+    </ul>
+    <h3>Understand</h3>
+    <ul>
+    <li><b>About this process</b> (v0.3.1): what it is, who signed it, and why access may be denied.</li>
+    <li><b>More columns</b> (v0.3.2): type, status, publisher, command line, GPU, GPU engine and now <b>network</b> (v0.3.11). Right click the header to choose.</li>
+    <li><b>Find by window</b> (v0.3.3), <b>quick palette</b> with Ctrl+K or Ctrl+Shift+K from anywhere (v0.3.4), <b>process tree</b> (v0.3.5).</li>
+    <li><b>Who is using this file?</b> (v0.3.6): drop a file to see which apps hold it open.</li>
+    <li><b>Starts with Windows</b> (v0.3.10): every autostart entry in one read-only list, with unusual ones flagged.</li>
+    </ul>
+    <h3>Control</h3>
+    <ul>
+    <li><b>New process alerts</b> (v0.3.8): hear about programs you watch, or anything started from Downloads or Temp.</li>
+    <li><b>Limits</b> (v0.3.9): cap a program's processor and memory use; it keeps running.</li>
+    <li><b>Rule packs</b> (v0.3.12): Gaming mode, Bloat blocker and Quiet laptop in one switch, plus import and export.</li>
+    </ul>
+    <h3>New in this release</h3>
+    <ul>
+    <li>On narrow windows the process table hides its least important columns instead of spilling past the edge, and the toolbar no longer overlaps.</li>
+    </ul>
+    <h3>Still to come</h3>
+    <p>Ending processes, the PauseSwitch system changes, and signed releases. See the <a href="https://github.com/Ege-BULUT/WinKillSwitch#roadmap">roadmap</a>.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.4.0/WinKillSwitch.exe">Download v0.4.0</a>
+      <span class="sha">SHA-256 53849340d45591830a5011530ee9b81f9397a97659624dd84fdf11c47cd36fbf</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.12">
+    <header><h2>v0.3.12</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Rule packs</h3>
+    <p>Ready made setups you can switch on in one press, and your own rules as a file you can share.</p>
+    <ul>
+    <li><b>Settings &gt; Rule packs</b> has three profiles:</li>
+    <ul>
+    <li><b>Gaming mode</b>: OneDrive, Dropbox, Google Drive, Teams, Slack and Spotify capped so your game gets the processor.</li>
+    <li><b>Bloat blocker</b>: alerts when updaters or anything from Downloads or Temp start, with background updaters capped.</li>
+    <li><b>Quiet laptop</b>: browsers and chat apps capped for quieter fans and longer battery life.</li>
+    </ul>
+    <li>Turning a profile off removes exactly the rules it added and keeps any you changed since.</li>
+    <li><b>Export my rules</b> saves your limits and alerts as JSON. <b>Import a pack</b> merges one in after checking it, so a bad file never half applies. The profiles are in <a href="https://github.com/Ege-BULUT/WinKillSwitch/tree/main/packs"><code>packs/</code></a> as examples.</li>
+    </ul>
+    <h3>Safety</h3>
+    <ul>
+    <li>Limits now double check every process before touching it: the program on disk must match the rule's name, and nothing in the Windows folder is ever limited, even if a process id was reused.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.12/WinKillSwitch.exe">Download v0.3.12</a>
+      <span class="sha">SHA-256 62ad02b65334c5008d386ef361c05361798417152bcc8e92e648d2d61770ac51</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.11">
+    <header><h2>v0.3.11</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Network per process</h3>
+    <p>See which app is using your connection.</p>
+    <ul>
+    <li>A new <b>Network</b> column shows each process's live traffic in Mbps, sent plus received. It is on by default; right click the header to move or hide it.</li>
+    <li>It reads the same Windows event source Resource Monitor uses, covering TCP and UDP over IPv4 and IPv6.</li>
+    <li>This needs administrator rights. Without them the column shows a dash instead of a misleading zero.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.11/WinKillSwitch.exe">Download v0.3.11</a>
+      <span class="sha">SHA-256 c89d5b3063ca6af412f61c266a33e8520050d8a59f9e54ed49df6a924a224928</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.10">
+    <header><h2>v0.3.10</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Starts with Windows</h3>
+    <p>See everything that launches itself, wherever it hides.</p>
+    <ul>
+    <li><b>PauseSwitch &gt; Starts with Windows</b> lists the Run and RunOnce registry keys (yours, the machine's and 32-bit), policy Run keys, both Startup folders, scheduled tasks that run at sign in or boot, and automatic services.</li>
+    <li>Each entry shows its publisher, its command and whether Task Manager has disabled it. <b>Show file</b> opens its folder.</li>
+    <li>Microsoft's own entries are hidden by default (one switch shows them), so the list is what you installed.</li>
+    <li>A changed Winlogon shell or userinit, or active AppInit DLLs, are flagged at the top as unusual: classic places for malware to hide.</li>
+    <li>The view only reads. It never changes anything.</li>
+    </ul>
+    <h3>Fixes</h3>
+    <ul>
+    <li>Some programs' publisher names could carry stray text from the next version field.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.10/WinKillSwitch.exe">Download v0.3.10</a>
+      <span class="sha">SHA-256 500a8d4a13447a9539a420989c36d88fd1fa96428242669719b5349d72d2d93c</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.9">
+    <header><h2>v0.3.9</h2><span class="date">November 8, 2026</span></header>
+    <p class="lede-sm">CPU and memory limits</p>
+    <h3>Limits</h3>
+    <p>Keep a heavy program from taking over your PC, without closing it.</p>
+    <ul>
+    <li>Open a process's <b>Details</b> and choose <b>Set limits</b>.</li>
+    <li><b>Processor</b>: 50%, 25% or 10% of your processor for the whole program, all its processes together. It runs slower, never breaks.</li>
+    <li><b>Memory</b>: 4 GB, 2 GB, 1 GB or 512 MB of RAM per process. Windows moves the rest to disk instead of refusing memory, so the program keeps running.</li>
+    <li>Limits are remembered by program name and come back every time it starts. <b>Settings &gt; Limits</b> lists them; remove one and the program is free immediately.</li>
+    <li>Windows' own processes cannot be limited.</li>
+    </ul>
+    <p>Tested on a real machine: a busy process went from 8.3% to 2.4% of the processor under a 2% cap, and a process holding 481 MB dropped to 127 MB under a 128 MB ceiling while it kept running.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.9/WinKillSwitch.exe">Download v0.3.9</a>
+      <span class="sha">SHA-256 01e955e1396fae8e99eb380e17204ca0d8e7d9875af1e4bce18a55131c6d7195</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.8">
+    <header><h2>v0.3.8</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>New process alerts</h3>
+    <p>Know when something starts, without watching the list.</p>
+    <ul>
+    <li><b>Settings &gt; Alerts &gt; Programs to watch</b>: type a name like <code>discord</code> or <code>steam*</code> and press Watch. When one starts, a small note appears in the corner with a <b>Show</b> button.</li>
+    <li><b>Programs started from Downloads or Temp</b>: one switch to hear about installers and downloaded tools the moment they run. Off by default.</li>
+    <li>Each process is mentioned once, and only when it starts after WinKillSwitch is open.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.8/WinKillSwitch.exe">Download v0.3.8</a>
+      <span class="sha">SHA-256 c27cd852e71bf5b2b2cd9e832abba7b93f38a1c468a9201351d144e834d4afad</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.7">
+    <header><h2>v0.3.7</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Why is my PC slow?</h3>
+    <p>One button, one plain answer.</p>
+    <ul>
+    <li>Press <b>Why is my PC slow?</b> on the Clean tab (or find it in the quick palette, Ctrl+K).</li>
+    <li>WinKillSwitch watches your PC for about five seconds, then checks the processor, memory, disk space, disk activity, graphics and uptime, worst first.</li>
+    <li>When a process is behind it, you see its name. The numbers are averaged, so a one-second spike is not blamed.</li>
+    <li>Each problem comes with its fix: <b>Show it</b>, <b>Clean memory</b> or <b>Analyze disk</b>.</li>
+    </ul>
+    <h3>Fixes</h3>
+    <ul>
+    <li>The Disk column could show an impossible rate for a process the first time it was sampled. It now starts at zero.</li>
+    <li>The system drive labels no longer run together on a narrow window.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.7/WinKillSwitch.exe">Download v0.3.7</a>
+      <span class="sha">SHA-256 988696e0c39080191882ee33eae3ea5c94712b074b84d402c53affdc7f994694</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.6">
+    <header><h2>v0.3.6</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Who is using this file?</h3>
+    <p>"The action can't be completed because the file is open in another program." Now you can find out which program.</p>
+    <ul>
+    <li><b>Drop</b> a file or folder anywhere on the WinKillSwitch window, or open the quick palette and choose <b>Who is using a file?</b> to pick one.</li>
+    <li>You get every app and service holding it open: its name, process, PID and kind (app, service, Explorer, console). <b>Details</b> opens that process's card.</li>
+    <li>Folders are checked file by file, up to 2,000 files.</li>
+    <li>If nothing holds it, the card says so and suggests what else might be blocking you.</li>
+    </ul>
+    <p>It uses the Windows Restart Manager, the same API installers and PowerToys File Locksmith rely on.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.6/WinKillSwitch.exe">Download v0.3.6</a>
+      <span class="sha">SHA-256 072d5874be3664865df35c63317845d68cccaae609541f61d6b301c4541592ef</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.5">
+    <header><h2>v0.3.5</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Process tree</h3>
+    <p>Switch the table from <b>List</b> to <b>Tree</b> to see which process started which.</p>
+    <ul>
+    <li>Each process sits under its parent: apps under Explorer, browser helpers under the browser, services under their host.</li>
+    <li>Click the chevron to fold or unfold a branch.</li>
+    <li>Siblings follow the column you sort by, so the busiest child is still on top.</li>
+    <li>While you search, matches show together with their parents, even inside a folded branch, so you keep the context.</li>
+    </ul>
+    <p>Windows reuses process IDs, which can make an unrelated process look like a parent. WinKillSwitch only counts a parent that is still running and started before its child, the same rule Process Explorer uses.</p>
+    <p>Your choice of list or tree is remembered.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.5/WinKillSwitch.exe">Download v0.3.5</a>
+      <span class="sha">SHA-256 62e36c36b060bec52c67535bcdc903402b63ffa9610e4945f566837119373acd</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.4">
+    <header><h2>v0.3.4</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Quick palette</h3>
+    <p>Press <b>Ctrl+K</b> inside WinKillSwitch, or <b>Ctrl+Shift+K</b> from anywhere in Windows, and start typing.</p>
+    <ul>
+    <li><b>Processes</b>: type part of a name or description. Each app shows once, with how many copies run and how much memory they use. Enter selects it and opens its details.</li>
+    <li><b>Groups</b>: jump straight to one.</li>
+    <li><b>Commands</b>: Clean memory, Analyze disk, Go to a tab, New group, Light, Dark or System mode, any of the six palettes, and Restart as administrator.</li>
+    </ul>
+    <p>Arrow keys move, Enter runs, Escape closes. With nothing typed, the most useful commands are listed.</p>
+    <p><b>Ctrl+Shift+K</b> works even when WinKillSwitch is behind other windows: it comes forward with the palette open. You can turn it off under <b>Settings &gt; Shortcuts</b>, which also tells you if another app already uses that shortcut.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.4/WinKillSwitch.exe">Download v0.3.4</a>
+      <span class="sha">SHA-256 772f835c5bcab1057bf0b98d2aeeb35a1d0d47c32e96c286c33bca48e2bff626</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.3">
+    <header><h2>v0.3.3</h2><span class="date">November 8, 2026</span></header>
+    <p class="lede-sm">Find by window</p>
+    <h3>Find a process by its window</h3>
+    <p>Not sure which process owns a window? Press the <b>target</b> next to the search box and drag it onto the window.</p>
+    <ul>
+    <li>While you drag, a label names the process and window under the pointer.</li>
+    <li>Let go, and that process is selected in the table and scrolled into view. If a search was hiding it, the search is cleared.</li>
+    <li>Press <b>Details</b> right after to see what it is and whether it can be managed.</li>
+    </ul>
+    <p>Because you drag rather than click, the window you point at does not receive a click.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.3/WinKillSwitch.exe">Download v0.3.3</a>
+      <span class="sha">SHA-256 4e38bfa055c3b6d86e3841c533c9e2a638f48375cfe58bdfedc591fc67755b36</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.2">
+    <header><h2>v0.3.2</h2><span class="date">November 8, 2026</span></header>
+    <p class="lede-sm">columns and GPU</p>
+    <h3>Choose your columns</h3>
+    <p>Right click the process table's header to pick what it shows. Besides name, PID, CPU and memory you can add:</p>
+    <ul>
+    <li><b>Disk</b>: read and write rate per process.</li>
+    <li><b>GPU</b> and <b>GPU engine</b>: how much of the graphics card a process uses, and on which engine (3D, video decode, copy). It reads the same GPU Engine counters as Task Manager.</li>
+    <li><b>Type, Status, Publisher, Description</b> and <b>Command line</b>.</li>
+    </ul>
+    <p>Your choice is saved. <b>Reset to default</b> brings back name, PID, CPU, memory, disk and GPU. Every column sorts when you click its header.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.2/WinKillSwitch.exe">Download v0.3.2</a>
+      <span class="sha">SHA-256 26b075f996378da97b25cf02696fdff58a864d6c3eb078afa9d644d9af0aa48b</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.1">
+    <header><h2>v0.3.1</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>About this process</h3>
+    <p>Double click any process (or select it and press <b>Details</b>) to open a card that answers three questions.</p>
+    <p><b>What is it?</b> About 40 common Windows processes, such as svchost, dwm, csrss, RuntimeBroker and MsMpEng, get a plain language explanation and a note on whether ending them is safe. Everything else shows its publisher and where it is installed.</p>
+    <p><b>Can WinKillSwitch manage it, and if not, why?</b> The card says so in one line and explains the reason:</p>
+    <ul>
+    <li>a critical system process Windows needs to run;</li>
+    <li>a protected process that Windows keeps every app away from, administrator or not (security software, DRM);</li>
+    <li>a process running as SYSTEM, a service account or administrator, with a one click <b>Restart as admin</b> when that would help.</li>
+    </ul>
+    <p><b>What are the facts?</b> The digital signature is verified, and you see who it runs as, when it started, its parent (click it to open the parent's card), its children grouped by name, its location and its full command line, each with a copy button. <b>Open file location</b> and <b>Search the web</b> are one click away.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.1/WinKillSwitch.exe">Download v0.3.1</a>
+      <span class="sha">SHA-256 48e3898e7b9c72a0c48554057ee2e7e885a961a356a0afe805c3eee33bc7e3a2</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.3.0">
+    <header><h2>v0.3.0</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Disk cleaner</h3>
+    <p>The <b>Clean</b> tab now has a <b>Storage</b> card next to the memory cleaner.</p>
+    <p>1. Press <b>Analyze</b>. WinKillSwitch looks through the places Windows and apps leave regenerable files, with a live count as it goes.</p>
+    <p>2. Review the list. Safe categories start ticked. The Recycle Bin and GPU shader caches start unticked, because emptying the bin is permanent and games rebuild shaders slowly. A browser's cache is skipped while that browser is open, and categories that need administrator rights say so.</p>
+    <p>3. Press <b>Clean</b>. You see how much space came back, how many files were removed, and how many were skipped because something was using them.</p>
+    <p><b>What it looks at:</b> temporary files, Windows temporary files, crash dumps and error reports, the thumbnail cache, Chrome, Edge, Brave, Vivaldi and Firefox caches, DirectX, NVIDIA and AMD shader caches, Windows Update and Delivery Optimization downloads, and the Recycle Bin.</p>
+    <p><b>How it stays safe</b></p>
+    <ul>
+    <li>It only removes files inside those fixed folders, found through Windows' own environment variables, and never the folders themselves.</li>
+    <li>It never follows a symbolic link or junction, so nothing outside those folders can be reached.</li>
+    <li>Temporary files changed in the last 7 days are kept, the same rule Windows Disk Cleanup uses.</li>
+    <li>Files in use are skipped and counted, never forced.</li>
+    </ul>
+    <p><b>Fast:</b> a temp folder with about 370,000 files scans in roughly 20 seconds.</p>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.3.0/WinKillSwitch.exe">Download v0.3.0</a>
+      <span class="sha">SHA-256 ddf256fbb0e088e5c16ab6df72c67abea64056831ebdb433a514f1d1fda6b144</span>
+    </div>
+  </article>
+
+  <article class="rel glass" id="v0.2.0">
+    <header><h2>v0.2.0</h2><span class="date">November 8, 2026</span></header>
+    
+    <h3>Memory cleaner</h3>
+    <p>The new <b>Clean</b> tab shows your memory as a ring: in use, cached and free, with a two minute history underneath.</p>
+    <p>Press <b>Clean memory</b> and WinKillSwitch:</p>
+    <ul>
+    <li>trims every app's working set, so pages they are not using go back to Windows;</li>
+    <li>as administrator, writes changed pages to disk and clears the standby cache.</li>
+    </ul>
+    <p>Nothing is closed. While it runs, the button says which step it is on. When it finishes, the freed amount counts up and the cached slice of the ring shrinks. On a 16 GB test machine a clean freed 2.4 GB of free memory in about three seconds.</p>
+    <p>Windows refills memory as apps need it, so the gain is temporary by design. It helps most right before starting something heavy, like a game or a render.</p>
+    <h3>Also</h3>
+    <ul>
+    <li>Cached memory is drawn in the palette's second accent so it reads apart from memory in use.</li>
+    <li>The history sparkline scales to its own range, so small changes are visible.</li>
+    </ul>
+    <div class="dl">
+      <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.2.0/WinKillSwitch.exe">Download v0.2.0</a>
+      <span class="sha">SHA-256 32f54961a995229b68fedd225b92ed072c00dcd30ee34df6377098fdfb1eb1d3</span>
+    </div>
+  </article>
+
   <article class="rel glass" id="v0.1.0">
-    <header><h2>v0.1.0</h2><span class="tag latest">First release</span><span class="date">November 8, 2026</span></header>
-    <p>The first public alpha: the glass interface, live monitoring, groups and themes.</p>
+    <header><h2>v0.1.0</h2><span class="date">November 8, 2026</span></header>
+    
+    <p>The first public alpha of WinKillSwitch: a native Windows process manager drawn on the GPU with Rust and Rune.</p>
     <h3>Added</h3>
     <ul>
-      <li><b>Live process table</b> refreshed every 1.5 seconds with name, PID, CPU and memory, plus search by name, PID or path.</li>
-      <li><b>Process groups</b>: create, rename in place, delete, add the selected rows, and see which members are running.</li>
-      <li><b>Glass interface</b> drawn on the GPU with Rune and rune-fx: liquid, fluted and frosted glass over a live palette gradient, with a floating glass tab bar.</li>
-      <li><b>Six palettes</b> with official light and dark variants (Rune Aurora, Catppuccin, Rosé Pine, Tokyo Night, Kanagawa, Everforest), an accent picker, glass style and strength, and an animated background you can turn off.</li>
-      <li><b>Responsive under load</b>: sampling runs on a background thread at lower priority while the interface runs above normal priority.</li>
-      <li><b>Safety sheets</b> that list every process before any destructive action, and a one click relaunch as administrator.</li>
-      <li><code>--version</code> flag and a headless <code>--scene demo --snap</code> render for scripts and agents.</li>
+    <li><b>Live process table</b> refreshed every 1.5 seconds with name, PID, CPU and memory, plus search by name, PID or path.</li>
+    <li><b>Process groups</b>: create, rename in place, delete, add the selected rows, and see which members are running.</li>
+    <li><b>Glass interface</b>: liquid, fluted and frosted glass over a live palette gradient, with a floating glass tab bar.</li>
+    <li><b>Six palettes</b> with official light and dark variants, an accent picker, glass style and strength, and an animated background you can turn off.</li>
+    <li><b>Responsive under load</b>: sampling runs on a background thread at lower priority, the interface above normal priority.</li>
+    <li><b>Safety sheets</b> that list every process before any destructive action, and a one click relaunch as administrator.</li>
+    <li><code>--version</code> flag and a headless <code>--scene demo --snap out.png</code> render for scripts and agents.</li>
     </ul>
     <h3>Known limitations</h3>
     <ul>
-      <li>Ending processes and PauseSwitch's system changes are wired into the interface but not implemented yet; the app says so when you use them.</li>
-      <li>The executable is not code signed, so SmartScreen may warn on first launch.</li>
+    <li>Ending processes and PauseSwitch's system changes are wired into the interface but not implemented yet; the app says so when you use them.</li>
+    <li>The executable is not code signed, so SmartScreen may warn on first launch. Choose <b>More info</b>, then <b>Run anyway</b>.</li>
     </ul>
     <div class="dl">
       <a class="btn" href="https://github.com/Ege-BULUT/WinKillSwitch/releases/download/v0.1.0/WinKillSwitch.exe">Download v0.1.0</a>
       <span class="sha">SHA-256 e03a0e77db4185cd83d194933d53e3bd70c3011af3467cea18c6a6d40b74d0bd</span>
     </div>
   </article>
+  <!-- /RELEASES -->
 
-  <section class="planned-list" aria-label="Planned releases">
-    <article class="rel glass"><header><h2>v0.2.0</h2><span class="tag planned">Planned</span></header><p>Memory cleaner: a live gauge of memory in use, cached and free, and one Clean button that shows exactly what it freed.</p></article>
-    <article class="rel glass"><header><h2>v0.3.0</h2><span class="tag planned">Planned</span></header><p>Disk cleaner: analyze temporary files, caches and leftovers, review them, then clean in one step.</p></article>
-    <article class="rel glass"><header><h2>v0.3.x</h2><span class="tag planned">Planned</span></header><p>One feature per release: process info card, GPU column, find by window, quick palette, process tree, file lock finder, slowdown diagnosis, new process alerts, CPU and memory caps, wider autostart coverage, per process network, and rule packs.</p></article>
-    <article class="rel glass"><header><h2>v0.4.0</h2><span class="tag planned">Planned</span></header><p>The complete set, tested together.</p></article>
+  <section class="planned-list" aria-label="Planned">
+    <article class="rel glass"><header><h2>Next</h2><span class="tag planned">Planned</span></header><p>Ending processes (one, a tree, or everything related, asking apps to close before forcing them), the PauseSwitch backend that restores autostart entries exactly, and signed releases with a winget package.</p></article>
   </section>
 
   <footer>WinKillSwitch is MIT licensed and not affiliated with Microsoft.</footer>
