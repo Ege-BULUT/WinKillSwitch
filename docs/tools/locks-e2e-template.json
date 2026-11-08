@@ -1,0 +1,32 @@
+[
+  {
+    "t": 0.3,
+    "drag_files": {
+      "paths": [
+        "C:\\path\\to\\locked.txt"
+      ],
+      "at": [
+        680,
+        440
+      ]
+    }
+  },
+  {
+    "t": 0.6,
+    "drop_files": {
+      "paths": [
+        "C:\\path\\to\\locked.txt"
+      ],
+      "at": [
+        680,
+        440
+      ],
+      "hover": 0.3
+    }
+  },
+  {
+    "t": 30.0,
+    "type": "mark",
+    "name": "end"
+  }
+]

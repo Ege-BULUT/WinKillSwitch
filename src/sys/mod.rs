@@ -8,6 +8,7 @@ pub mod guard;
 pub mod hotkey;
 pub mod info;
 pub mod kill;
+pub mod locks;
 pub mod memory;
 pub mod procs;
 pub mod related;

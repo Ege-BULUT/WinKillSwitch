@@ -66,6 +66,12 @@ fn handle(s: &mut App, m: Msg) {
             s.disk.items.sort_by(|a, b| b.found.bytes.cmp(&a.found.bytes));
             s.disk.phase = DiskPhase::Ready;
         }
+        Msg::Locks(r) => {
+            if let Some(st) = s.locks.as_mut().filter(|st| st.target.as_ref() == Some(&r.target)) {
+                st.busy = false;
+                st.report = Some(r);
+            }
+        }
         Msg::Detail(d) => {
             if let Some(info) = s.info.as_mut().filter(|i| i.pid == d.pid) {
                 info.detail = Some(d);

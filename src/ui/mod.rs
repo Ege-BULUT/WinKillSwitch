@@ -7,6 +7,7 @@ pub mod glass;
 pub mod groups;
 pub mod icons;
 pub mod info;
+pub mod locks;
 pub mod overlays;
 pub mod palette;
 pub mod palettes;

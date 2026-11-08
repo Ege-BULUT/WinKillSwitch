@@ -108,6 +108,10 @@ pub struct App {
     pub columns: Vec<String>,
     /// Where the column picker opened, while it is open.
     pub column_menu: Option<rune::PointerPress>,
+    /// The "who is using this file?" sheet, while open.
+    pub locks: Option<crate::ui::locks::LocksState>,
+    /// A file is being dragged over the window.
+    pub drop_hover: bool,
     /// The quick palette, while open.
     pub palette: Option<crate::ui::palette::PaletteState>,
     /// Dragging the find-by-window target, and what it is over right now.
@@ -168,6 +172,8 @@ impl App {
             columns: saved.columns.clone(),
             column_menu: None,
             palette: None,
+            locks: None,
+            drop_hover: false,
             finding: false,
             find_hover: None,
             pending_info: None,

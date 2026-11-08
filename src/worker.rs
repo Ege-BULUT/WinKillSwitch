@@ -19,6 +19,7 @@ pub enum Cmd {
     ScanDisk { running: Vec<String>, elevated: bool },
     CleanDisk { cats: Vec<Category>, running: Vec<String>, elevated: bool },
     Inspect { pid: crate::model::Pid, name: String, exe: Option<std::path::PathBuf>, admin: bool },
+    Locks(std::path::PathBuf),
 }
 
 pub enum Msg {
@@ -30,6 +31,7 @@ pub enum Msg {
     DiskCleaning { done: usize, total: usize, current: String, freed: u64 },
     DiskCleaned { results: Vec<(String, Cleaned)>, drive: (u64, u64) },
     Detail(crate::sys::info::Detail),
+    Locks(crate::sys::locks::Report),
 }
 
 pub struct Worker {
@@ -133,6 +135,12 @@ fn run(cmds: Receiver<Cmd>, out: Sender<Msg>) {
                 let out = out.clone();
                 std::thread::spawn(move || {
                     let _ = out.send(Msg::Detail(crate::sys::info::inspect(pid, &name, exe.as_deref(), admin)));
+                });
+            }
+            Ok(Cmd::Locks(path)) => {
+                let out = out.clone();
+                std::thread::spawn(move || {
+                    let _ = out.send(Msg::Locks(crate::sys::locks::who(&path)));
                 });
             }
             Err(RecvTimeoutError::Disconnected) => return,

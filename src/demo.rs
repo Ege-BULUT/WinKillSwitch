@@ -193,6 +193,26 @@ pub fn apply(s: &mut App) {
     if let Ok(cols) = std::env::var("WKS_COLUMNS") {
         s.columns = cols.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect();
     }
+    if std::env::var("WKS_LOCKS").is_ok() {
+        use crate::sys::locks::{Locker, Report};
+        let pid = |n: &str| s.snap.procs.iter().find(|p| p.name == n).map(|p| p.pid).unwrap_or(0);
+        let target = std::path::PathBuf::from(r"C:\Users\demo\Documents\Quarterly report.xlsx");
+        s.locks = Some(crate::ui::locks::LocksState {
+            target: Some(target.clone()),
+            report: Some(Report {
+                target,
+                lockers: vec![
+                    Locker { pid: pid("OneDrive.exe"), app: "Microsoft OneDrive".into(), kind: "App", service: String::new() },
+                    Locker { pid: pid("explorer.exe"), app: "Windows Explorer".into(), kind: "Explorer", service: String::new() },
+                    Locker { pid: pid("SearchHost.exe"), app: "Search".into(), kind: "App", service: String::new() },
+                ],
+                files: 1,
+                truncated: false,
+                error: None,
+            }),
+            busy: false,
+        });
+    }
     if std::env::var("WKS_OPEN_PALETTE").is_ok() {
         crate::ui::palette::open(s);
     }

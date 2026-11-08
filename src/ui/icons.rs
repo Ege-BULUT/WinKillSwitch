@@ -78,3 +78,5 @@ icon16!(CHECK, "wks-check", r#"<path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="curr
 icon16!(TARGET, "wks-target", r#"<circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><path d="M8 1.5V4M8 12V14.5M1.5 8H4M12 8H14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>"#);
 
 icon16!(CHEVRON, "wks-chevron", r#"<path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>"#);
+
+icon16!(LOCK, "wks-lock", r#"<rect x="3.5" y="7" width="9" height="6.5" rx="1.6" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="8" cy="10.2" r=".9" fill="currentColor"/>"#);

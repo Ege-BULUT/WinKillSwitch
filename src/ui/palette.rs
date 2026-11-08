@@ -24,6 +24,7 @@ pub enum Action {
     Theme(&'static str),
     Mode(ThemeMode),
     NewGroup,
+    Locks,
     Admin,
     Process(Pid),
     Group(u64),
@@ -61,6 +62,7 @@ fn commands(s: &App) -> Vec<Item> {
         cmd("Go to PauseSwitch", "", Action::Tab(Tab::PauseSwitch)),
         cmd("Go to Settings", "", Action::Tab(Tab::Settings)),
         cmd("New group", "", Action::NewGroup),
+        cmd("Who is using a file?", "Find what keeps a file or folder locked", Action::Locks),
         cmd("Light mode", "Appearance", Action::Mode(ThemeMode::Light)),
         cmd("Dark mode", "Appearance", Action::Mode(ThemeMode::Dark)),
         cmd("Follow system light or dark", "Appearance", Action::Mode(ThemeMode::System)),
@@ -152,6 +154,7 @@ pub fn run(s: &mut App, a: Action, tx: &mut rune::Tx) {
             edit.focused = true;
             s.rename = Some((id, edit));
         }
+        Action::Locks => crate::ui::locks::open(s),
         Action::Admin => {
             if crate::sys::elevate::relaunch_as_admin("").is_ok() {
                 std::process::exit(0);

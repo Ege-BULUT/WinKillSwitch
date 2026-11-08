@@ -42,12 +42,29 @@ pub fn view(s: &App, cx: &mut Cx<App>) -> El {
     let shown: Vec<_> = all.into_iter().filter(|(t, _, _)| *t != Tab::Clean || crate::ui::MEMORY_CLEANER || crate::ui::DISK_CLEANER).collect();
     let tabs = glass::tab_bar(s, &l, &shown);
 
-    let base = el().key("root").w_full().h_full().fill(theme::color(l.v.bg)).child(backdrop).child(body).child(tabs);
+    // Drop a file or folder anywhere to see who is using it.
+    let base = el()
+        .key("root")
+        .w_full()
+        .h_full()
+        .fill(theme::color(l.v.bg))
+        .on_drop_hover(|s: &mut App, over, _| s.drop_hover = over)
+        .on_drop_files(|s: &mut App, files, _| {
+            s.drop_hover = false;
+            if let Some(f) = files.first() {
+                crate::ui::locks::check(s, f.clone());
+            }
+        })
+        .child(backdrop)
+        .child(body)
+        .child(tabs);
 
     let window_h = cx.layout_size("root").map(|z| z[1]).unwrap_or(800.0);
     crate::ui::info::sheet(s, &l, &mut layer, window_h);
     overlays::confirm(s, &l.kit, &mut layer);
     overlays::toasts(s, &l.kit, &mut layer);
+    crate::ui::locks::sheet(s, &l, &mut layer);
     crate::ui::palette::overlay(s, &l, &mut layer);
+    crate::ui::locks::drop_hint(s, &l, &mut layer);
     rune_kit::root(base, layer)
 }
