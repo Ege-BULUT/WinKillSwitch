@@ -207,6 +207,32 @@ pub fn apply(s: &mut App) {
             d.mem = 3;
         }
     }
+    if std::env::var("WKS_PAUSE_VIEW").is_ok_and(|v| v == "startup") {
+        use crate::sys::startup::{Item, Kind};
+        let it = |name: &str, cmd: &str, kind, location: &str, enabled, publisher: &str, microsoft| Item {
+            name: name.into(),
+            command: cmd.into(),
+            exe: None,
+            kind,
+            location: location.into(),
+            enabled,
+            publisher: publisher.into(),
+            microsoft,
+        };
+        s.pause_view = 1;
+        s.startup.items = Some(vec![
+            it("Winlogon shell", r"explorer.exe, C:\Users\demo\AppData\Roaming\svc\host.exe", Kind::Unusual, r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon", true, "", false),
+            it("Discord", r#""C:\Users\demo\AppData\Local\Discord\Update.exe" --processStart Discord.exe"#, Kind::Registry, r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", true, "Discord Inc.", false),
+            it("Spotify", r"C:\Users\demo\AppData\Roaming\Spotify\Spotify.exe /background", Kind::Registry, r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", false, "Spotify Ltd", false),
+            it("Steam", r#""C:\Program Files (x86)\Steam\steam.exe" -silent"#, Kind::Registry, r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", true, "Valve Corporation", false),
+            it("OneDrive", r#""C:\Program Files\Microsoft OneDrive\OneDrive.exe" /background"#, Kind::Registry, r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", true, "Microsoft Corporation", true),
+            it("Logitech G HUB", r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\Logitech G HUB.lnk", Kind::Folder, r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp", true, "", false),
+            it("GoogleUpdaterTaskSystem", r#""C:\Program Files (x86)\Google\GoogleUpdater\updater.exe" --wake"#, Kind::Task, r"\GoogleUpdaterTaskSystem", true, "Google LLC", false),
+            it("NvProfileUpdaterOnLogon", r"C:\Program Files\NVIDIA Corporation\Update Core\NvProfileUpdater64.exe", Kind::Task, r"\NVIDIA\NvProfileUpdaterOnLogon", true, "NVIDIA Corporation", false),
+            it("Adobe Acrobat Update Service", r#""C:\Program Files (x86)\Common Files\Adobe\ARM\1.0\armsvc.exe""#, Kind::Service, r"HKLM\SYSTEM\CurrentControlSet\Services\AdobeARMservice", true, "Adobe Inc.", false),
+            it("Steam Client Service", r#""C:\Program Files (x86)\Common Files\Steam\steamservice.exe" /RunAsService"#, Kind::Service, r"HKLM\SYSTEM\CurrentControlSet\Services\Steam Client Service", true, "Valve Corporation", false),
+        ]);
+    }
     if std::env::var("WKS_DIAG").is_ok() {
         crate::ui::diagnose::start(s);
     }

@@ -20,6 +20,7 @@ pub enum Cmd {
     CleanDisk { cats: Vec<Category>, running: Vec<String>, elevated: bool },
     Inspect { pid: crate::model::Pid, name: String, exe: Option<std::path::PathBuf>, admin: bool },
     Locks(std::path::PathBuf),
+    Startup,
 }
 
 pub enum Msg {
@@ -32,6 +33,7 @@ pub enum Msg {
     DiskCleaned { results: Vec<(String, Cleaned)>, drive: (u64, u64) },
     Detail(crate::sys::info::Detail),
     Locks(crate::sys::locks::Report),
+    Startup(Vec<crate::sys::startup::Item>),
 }
 
 pub struct Worker {
@@ -135,6 +137,12 @@ fn run(cmds: Receiver<Cmd>, out: Sender<Msg>) {
                 let out = out.clone();
                 std::thread::spawn(move || {
                     let _ = out.send(Msg::Detail(crate::sys::info::inspect(pid, &name, exe.as_deref(), admin)));
+                });
+            }
+            Ok(Cmd::Startup) => {
+                let out = out.clone();
+                std::thread::spawn(move || {
+                    let _ = out.send(Msg::Startup(crate::sys::startup::scan()));
                 });
             }
             Ok(Cmd::Locks(path)) => {

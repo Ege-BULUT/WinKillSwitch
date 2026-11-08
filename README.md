@@ -70,6 +70,11 @@ The interface is drawn entirely on the GPU by [Rune](https://github.com/anomalyc
 - One button (on the Clean tab, or in the quick palette) watches the machine for about five seconds, then answers in plain words: processor, memory, disk space, disk activity, graphics and uptime, worst first.
 - It names the process behind a problem, averaged over the samples so a one-off spike is not blamed, and puts the fix one click away: **Show it**, **Clean memory** or **Analyze disk**.
 
+**Starts with Windows**
+- PauseSwitch has a second view listing every program set to start on its own: Run and RunOnce keys (yours, the machine's and 32-bit), policy Run keys, both Startup folders, scheduled tasks with a logon or boot trigger, and automatic services.
+- Each entry shows its publisher, its command and whether Task Manager disabled it, with **Show file** one click away. Microsoft's own entries are hidden until you ask for them.
+- A changed Winlogon shell or userinit, or active AppInit DLLs, are flagged as unusual at the top: classic hiding spots for malware. The view only reads; it changes nothing.
+
 **Limits**
 - Cap a program's processor and memory use from its **Details** card: 50%, 25% or 10% of the processor, 4 GB down to 512 MB of RAM per process.
 - The processor cap covers all of the program's processes together through a Windows Job Object, so it only runs slower. The memory cap is a working set ceiling: Windows pages the rest out instead of failing allocations, so the program keeps running.
@@ -234,7 +239,7 @@ Planned releases: **v0.2** adds the memory cleaner, **v0.3** the disk cleaner, *
 - [x] "Why is my PC slow?" one click diagnosis (v0.3.7)
 - [x] Notifications when new processes start, by rule (v0.3.8)
 - [x] CPU and memory ceilings per program (v0.3.9)
-- [ ] Wider autostart coverage
+- [x] Wider autostart coverage: a read only "Starts with Windows" inventory (v0.3.10)
 - [ ] Per process network traffic
 - [ ] Rule packs you can export and import, with ready made profiles such as Gaming mode and Bloat blocker
 - [ ] Ending processes: one, a tree, or everything related, asking apps to close before forcing them

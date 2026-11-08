@@ -17,6 +17,7 @@ pub mod pauseswitch;
 pub mod processes;
 pub mod root;
 pub mod settings;
+pub mod startup;
 pub mod theme;
 pub mod viz;
 

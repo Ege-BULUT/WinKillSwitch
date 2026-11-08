@@ -155,6 +155,9 @@ pub struct App {
     pub limits: Vec<crate::sys::limits::Limit>,
     pub enforcer: crate::sys::limits::Enforcer,
     pub limit_dialog: Option<crate::ui::limits::LimitDialog>,
+    /// PauseSwitch tab: 0 groups, 1 the "starts with Windows" inventory.
+    pub pause_view: usize,
+    pub startup: crate::ui::startup::StartupState,
 
     pub elevated: bool,
     pub clock: f64,
@@ -216,6 +219,8 @@ impl App {
             limits: saved.limits.clone(),
             enforcer: Default::default(),
             limit_dialog: None,
+            pause_view: 0,
+            startup: Default::default(),
             elevated: sys::elevate::is_elevated(),
             clock: 0.0,
             last_sample: -10.0,

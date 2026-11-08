@@ -79,6 +79,11 @@ fn handle(s: &mut App, m: Msg) {
             s.disk.items.sort_by(|a, b| b.found.bytes.cmp(&a.found.bytes));
             s.disk.phase = DiskPhase::Ready;
         }
+        Msg::Startup(items) => {
+            if !s.demo {
+                s.startup.items = Some(items);
+            }
+        }
         Msg::Locks(r) => {
             if let Some(st) = s.locks.as_mut().filter(|st| st.target.as_ref() == Some(&r.target)) {
                 st.busy = false;
@@ -199,6 +204,11 @@ fn main() {
             ("palette", |s| ui::palette::open(s)),
             ("tree", |s| s.appearance.tree = true),
             ("diagnose", |s| ui::diagnose::start(s)),
+            ("startup", |s| {
+                s.tab = app::Tab::PauseSwitch;
+                s.pause_view = 1;
+                ui::startup::load(s);
+            }),
             ("pause", |s| s.tab = app::Tab::PauseSwitch),
             ("catppuccin", |s| s.appearance.palette = "catppuccin".into()),
             ("rose-pine", |s| s.appearance.palette = "rose-pine".into()),

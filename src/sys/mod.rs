@@ -16,4 +16,5 @@ pub mod memory;
 pub mod procs;
 pub mod related;
 pub mod shell;
+pub mod startup;
 pub mod verinfo;

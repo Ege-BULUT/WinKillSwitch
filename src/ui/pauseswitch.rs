@@ -105,5 +105,14 @@ pub fn view(s: &App, _cx: &mut Cx<App>, l: &Look) -> El {
         body = body.child(card);
     }
 
-    col().w_full().h_full().padding(28.0).items_center().child(body)
+    let inner = if s.pause_view == 1 { crate::ui::startup::view(s, l).max_w(900.0) } else { body };
+    col()
+        .w_full()
+        .h_full()
+        .min_h(0.0)
+        .padding(28.0)
+        .gap(18.0)
+        .items_center()
+        .child(crate::ui::startup::switcher(s, l))
+        .child(crate::ui::startup::scroll(col().key("pause-scroll").w_full().items_center().child(inner)))
 }
